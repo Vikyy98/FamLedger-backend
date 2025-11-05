@@ -1,4 +1,21 @@
+using FamLedger.Application.Interfaces;
+using FamLedger.Application.Services;
+using FamLedger.Infrastructure.Data;
+using FamLedger.Infrastructure.Interfaces;
+using FamLedger.Infrastructure.Services;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
+
+
+var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+
+builder.Services.AddDbContext<FamLedgerDbContext>(options => options.UseSqlServer(connectionString));
+
+
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<IUserRepository, UserRepository>();
+
 
 // Add services to the container.
 

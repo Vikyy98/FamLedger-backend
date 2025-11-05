@@ -16,4 +16,9 @@
     <PackageReference Include="StackExchange.Redis" Version="2.9.32" />
   </ItemGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\FamLedger.Application\FamLedger.Application.csproj" />
+    <ProjectReference Include="..\FamLedger.Domain\FamLedger.Domain.csproj" />
+  </ItemGroup>
+
 </Project>
