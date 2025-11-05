@@ -10,9 +10,4 @@
     <ProjectReference Include="..\FamLedger.Domain\FamLedger.Domain.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="Interface\" />
-    <Folder Include="Service\" />
-  </ItemGroup>
-
 </Project>
