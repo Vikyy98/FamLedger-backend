@@ -15,10 +15,15 @@ namespace FamLedger.Domain.Entities
         public string Phone { get; set; } = string.Empty;
         public string City { get; set; } = string.Empty;
         public string PinCode { get; set; } = string.Empty;
-        public string Role { get; set; } = "User";
+        public string Role { get; set; } = string.Empty;
         public bool Status { get; set; } = true;
-        public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
-        public DateTime UpdatedOn { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedOn { get; set; } 
+        public DateTime UpdatedOn { get; set; }
+
+        public Family Family { get; set; }
+        public ICollection<Income> Incomes { get; set; }
+        public ICollection<Expense> Expenses { get; set; }
+        public ICollection<Asset> Assets { get; set; }
 
     }
 }
