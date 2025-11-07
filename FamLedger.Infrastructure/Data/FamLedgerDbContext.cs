@@ -39,7 +39,6 @@ namespace FamLedger.Infrastructure.Data
             modelBuilder.Entity<User>(entity =>
             {
                 entity.HasIndex(entity => entity.Email).IsUnique();
-                entity.Property(entity =>entity.Phone).HasMaxLength(20);
             });
 
             modelBuilder.Entity<Family>().HasIndex(entity => entity.FamilyCode).IsUnique();

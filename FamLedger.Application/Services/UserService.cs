@@ -9,5 +9,7 @@ namespace FamLedger.Application.Services
 {
     public class UserService : IUserService
     {
+
+
     }
 }

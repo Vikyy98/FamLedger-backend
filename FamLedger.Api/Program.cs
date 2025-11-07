@@ -1,4 +1,5 @@
 using FamLedger.Application.Interfaces;
+using FamLedger.Application.Profiles;
 using FamLedger.Application.Services;
 using FamLedger.Infrastructure.Data;
 using FamLedger.Infrastructure.Interfaces;
@@ -16,8 +17,8 @@ builder.Services.AddDbContext<FamLedgerDbContext>(options => options.UseSqlServe
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
 
-
 // Add services to the container.
+builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);
 
 builder.Services.AddControllers();
 // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
