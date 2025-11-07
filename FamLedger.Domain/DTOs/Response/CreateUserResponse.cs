@@ -9,7 +9,8 @@ namespace FamLedger.Domain.DTOs.Response
     public class CreateUserResponse
     {
         public int UserId { get; set; }
-        public int FamilyId { get; set; }
-        public string FamilyCode {  get; set; } = string.Empty;
+        public string? UserName { get; set; }
+        public int? FamilyId { get; set; }
+        public string? FamilyCode {  get; set; }
     }
 }
