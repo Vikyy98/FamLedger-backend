@@ -1,12 +1,11 @@
 ﻿using AutoMapper;
+using FamLedger.Application.Interfaces;
 using FamLedger.Domain.DTOs.Request;
 using FamLedger.Domain.DTOs.Response;
 using FamLedger.Domain.Entities;
 using FamLedger.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
 
 namespace FamLedger.Api.Controllers
 {
@@ -18,12 +17,14 @@ namespace FamLedger.Api.Controllers
         private readonly ILogger<AuthController> _logger;
         private readonly FamLedgerDbContext _context;
         private readonly IMapper _mapper;
+        private readonly IUserService _userService;
 
-        public AuthController(ILogger<AuthController> logger, FamLedgerDbContext famLedgerDbContext, IMapper mapper)
+        public AuthController(ILogger<AuthController> logger, FamLedgerDbContext famLedgerDbContext, IMapper mapper, IUserService userService)
         {
             _logger = logger;
             _context = famLedgerDbContext;
             _mapper = mapper;
+            _userService = userService;
         }
 
         [HttpPost]
@@ -82,7 +83,8 @@ namespace FamLedger.Api.Controllers
 
             //if all good ---return userid and user details 
 
-            return Ok(user);
+            var token = _userService.CreateToken(userDetails);
+            return Ok(new { token });
 
         }
     }

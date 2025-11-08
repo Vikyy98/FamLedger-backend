@@ -36,11 +36,7 @@ namespace FamLedger.Infrastructure.Data
             modelBuilder.Entity<User>().HasMany(u => u.Assets).WithOne(a => a.User).HasForeignKey(a => a.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
 
             //Adding constraints
-            modelBuilder.Entity<User>(entity =>
-            {
-                entity.HasIndex(entity => entity.Email).IsUnique();
-            });
-
+            modelBuilder.Entity<User>().HasIndex(e => e.Email).IsUnique(); 
             modelBuilder.Entity<Family>().HasIndex(entity => entity.FamilyCode).IsUnique();
             modelBuilder.Entity<Loan>().Property(entity => entity.InterestRate).HasPrecision(18, 2);
 
