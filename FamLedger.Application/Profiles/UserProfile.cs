@@ -12,7 +12,6 @@ namespace FamLedger.Application.Profiles
 {
     public class UserProfile : Profile
     {
-
         public UserProfile()
         {
             //DTO to Entity
