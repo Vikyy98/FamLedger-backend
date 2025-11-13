@@ -83,8 +83,10 @@ namespace FamLedger.Api.Controllers
 
             //if all good ---return userid and user details 
 
+            var userResponse = _mapper.Map<UserLoginResponse>(userDetails);
+
             var token = _userService.CreateToken(userDetails);
-            return Ok(new { token });
+            return Ok(new { token = token , user = userResponse });
 
         }
     }

@@ -38,7 +38,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowFrontend",
         policy =>
         {
-            policy.WithOrigins("http://localhost:3000") // Next.js local URL
+            policy.WithOrigins("http://localhost:3000", "https://localhost:7059") // Next.js local URL
                   .AllowAnyHeader()
                   .AllowAnyMethod()
                   .AllowCredentials(); // For cookies/JWT
@@ -58,7 +58,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseCors();
+app.UseCors("AllowFrontend");
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
