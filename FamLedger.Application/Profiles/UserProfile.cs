@@ -22,6 +22,10 @@ namespace FamLedger.Application.Profiles
             //Entity to DTO
             CreateMap<User, CreateUserResponse>().ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.FullName));
 
+            //Enitity to DTO
+            CreateMap<User, UserLoginResponse>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.FullName))
+                .ForMember(dest => dest.FamilyName, opt => opt.MapFrom(src => src.Family.FamilyName));
+
         }
     }
 }
