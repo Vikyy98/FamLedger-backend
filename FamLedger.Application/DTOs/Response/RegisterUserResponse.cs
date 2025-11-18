@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FamLedger.Domain.DTOs.Response
+namespace FamLedger.Application.DTOs.Response
 {
-    public class CreateUserResponse
+    public class RegisterUserResponse
     {
         public int UserId { get; set; }
         public string? UserName { get; set; }

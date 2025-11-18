@@ -2,7 +2,6 @@ using FamLedger.Application.Interfaces;
 using FamLedger.Application.Profiles;
 using FamLedger.Application.Services;
 using FamLedger.Infrastructure.Data;
-using FamLedger.Infrastructure.Interfaces;
 using FamLedger.Infrastructure.Services;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -47,6 +46,12 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+
+builder.Services.AddScoped<IIncomeService, IncomeService>();
+builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
+
+builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
+builder.Services.AddScoped<IFamilyService, FamilyService>();
 
 // Add services to the container.
 builder.Services.AddAutoMapper(typeof(UserProfile).Assembly);

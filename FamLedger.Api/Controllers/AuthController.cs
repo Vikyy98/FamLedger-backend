@@ -1,9 +1,8 @@
 ﻿using AutoMapper;
 using FamLedger.Application.Interfaces;
-using FamLedger.Domain.DTOs.Request;
-using FamLedger.Domain.DTOs.Response;
+using FamLedger.Application.DTOs.Request;
+using FamLedger.Application.DTOs.Response;
 using FamLedger.Domain.Entities;
-using FamLedger.Infrastructure.Data;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
@@ -15,79 +14,90 @@ namespace FamLedger.Api.Controllers
     {
 
         private readonly ILogger<AuthController> _logger;
-        private readonly FamLedgerDbContext _context;
         private readonly IMapper _mapper;
         private readonly IUserService _userService;
 
-        public AuthController(ILogger<AuthController> logger, FamLedgerDbContext famLedgerDbContext, IMapper mapper, IUserService userService)
+        public AuthController(ILogger<AuthController> logger, IMapper mapper, IUserService userService)
         {
             _logger = logger;
-            _context = famLedgerDbContext;
             _mapper = mapper;
             _userService = userService;
         }
 
-        [HttpPost]
-        [Route("/register")]
-        public async Task<IActionResult> Register([FromBody] CreateUserRequest createUser)
+        [HttpPost("register")]
+        public async Task<IActionResult> Register([FromBody] RegisterUserRequest createUser)
         {
-            if (createUser == null)
+            try
             {
-                return BadRequest("User data is null");
-            }
+                //Validate user data
+                if (createUser == null || string.IsNullOrWhiteSpace(createUser.FullName) || string.IsNullOrWhiteSpace(createUser.Email) || string.IsNullOrWhiteSpace(createUser.Password))
+                {
+                    return BadRequest("User data is missing");
+                }
 
-            //Check if mail is already there
-            var isEmailExist = _context.User.Any(u => u.Email == createUser.Email);
-            if (isEmailExist)
+                //Check if mail is already there
+                var users = await _userService.GetUserAsync();
+                var isEmailExist = users.Any(u => string.Equals(u.Email, createUser.Email));
+                if (isEmailExist)
+                {
+                    return Conflict("Email already exists");
+                }
+
+                //Register User
+                var response = await _userService.RegisterUserAsync(createUser);
+                if (response == null) { return BadRequest("Register User Failed - Reponse is empty"); }
+
+                return Ok(response);
+            }
+            catch (Exception ex)
             {
-                return Conflict("Email already exists");
+                _logger.LogError(ex, "Error occurred in Register method");
+                return BadRequest(ex);
             }
-
-            var user = _mapper.Map<User>(createUser);
-            var hashedPassowrd = new PasswordHasher<User>().HashPassword(user, createUser.Password);
-            user.PasswordHash = hashedPassowrd;
-
-            _context.User.Add(user);
-            await _context.SaveChangesAsync();
-
-            var response = _mapper.Map<CreateUserResponse>(user);
-            return Ok(response);
         }
 
-        [HttpPost]
-        [Route("/login")]
+        [HttpPost("login")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest user)
         {
-
-            //Check if mail is already there
-            var isEmailExist = _context.User.Any(u => u.Email == user.Email);
-
-            if (!isEmailExist)
+            try
             {
-                return NotFound("Email does not exist");
-            } 
+                if (user == null || string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.Password))
+                {
+                    return BadRequest("User data is null");
+                }
 
-            //Check if password is correct
-            var userDetails = _context.User.FirstOrDefault(u => u.Email == user.Email);
-            if(userDetails == null)
-            {
-                return NotFound("User not found");
+                //Get all Users
+                var users = await _userService.GetUserAsync();
+
+                //Check if user is found
+                var userDetails = users.FirstOrDefault(u => string.Equals(u.Email, user.Email));
+                if (userDetails == null)
+                {
+                    return NotFound("User not found");
+                }
+
+                //Verify password
+                var passwordVerification = new PasswordHasher<UserReponseDto>().VerifyHashedPassword(userDetails, userDetails.PasswordHash, user.Password);
+                if (passwordVerification == PasswordVerificationResult.Failed)
+                {
+                    return Unauthorized("Invalid password");
+                }
+
+                var userResponse = _mapper.Map<UserLoginResponse>(userDetails);
+                var jwtToken = _userService.CreateToken(userDetails);
+                if (string.IsNullOrWhiteSpace(jwtToken) || userResponse == null) { return BadRequest("Failed to login, Try again later"); }
+                userResponse.token = jwtToken;
+
+                //return token and user response
+                return Ok(new { user = userResponse });
             }
-
-
-            var passwordVerification = new PasswordHasher<User>().VerifyHashedPassword(userDetails, userDetails.PasswordHash, user.Password);
-            if (passwordVerification == PasswordVerificationResult.Failed)
+            catch (Exception ex)
             {
-                return Unauthorized("Invalid password");
+                _logger.LogError(ex, "Error occurred in Login method");
+                return BadRequest(ex);
             }
-
-            //if all good ---return userid and user details 
-
-            var userResponse = _mapper.Map<UserLoginResponse>(userDetails);
-
-            var token = _userService.CreateToken(userDetails);
-            return Ok(new { token = token , user = userResponse });
-
         }
+
+
     }
 }
