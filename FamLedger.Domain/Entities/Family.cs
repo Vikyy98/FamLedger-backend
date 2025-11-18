@@ -12,10 +12,10 @@ namespace FamLedger.Domain.Entities
         public string FamilyName {  get; set; } = string.Empty;
         public string FamilyCode {  get; set; } = string.Empty;
         public bool Status { get; set; } = true;
+        public string InvitationCode {  get; set; } = string.Empty;
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; } 
-
-
+        public int CreatedBy {  get; set; }
 
         public ICollection<User> Users { get; set; }
         public ICollection<Income> Incomes { get; set; }

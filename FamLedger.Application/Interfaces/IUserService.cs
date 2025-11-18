@@ -1,4 +1,6 @@
-﻿using FamLedger.Domain.Entities;
+﻿using FamLedger.Application.DTOs.Request;
+using FamLedger.Application.DTOs.Response;
+using FamLedger.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -9,6 +11,8 @@ namespace FamLedger.Application.Interfaces
 {
     public interface IUserService
     {
-        string CreateToken(User userDetails);
+        Task<List<UserReponseDto>> GetUserAsync();
+        Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest userRequest);
+        string CreateToken(UserReponseDto userDetails);
     }
 }

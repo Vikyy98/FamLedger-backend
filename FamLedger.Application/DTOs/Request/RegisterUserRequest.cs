@@ -1,6 +1,6 @@
-﻿namespace FamLedger.Domain.DTOs.Request
+﻿namespace FamLedger.Application.DTOs.Request
 {
-    public class CreateUserRequest
+    public class RegisterUserRequest
     {
         public string FullName {  get; set; } = string.Empty;
         public string FamilyName {  get; set; } = string.Empty;

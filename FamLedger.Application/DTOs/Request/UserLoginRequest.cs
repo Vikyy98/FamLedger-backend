@@ -4,12 +4,11 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace FamLedger.Domain.DTOs.Request
+namespace FamLedger.Application.DTOs.Request
 {
     public class UserLoginRequest
     {
         public string? Email { get; set; }
         public string? Password { get; set; }
-
     }
 }
