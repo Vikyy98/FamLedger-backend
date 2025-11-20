@@ -2,8 +2,10 @@
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
+using FamLedger.Application.Options;
 using FamLedger.Domain.Entities;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 
 namespace FamLedger.Application.Services
 {
@@ -13,61 +15,69 @@ namespace FamLedger.Application.Services
         private readonly IUserRepository _userRepository;
         private readonly ILogger<FamilyService> _logger;
         private readonly IMapper _mapper;
+        private readonly CommonOptions _options;
         public FamilyService(
             IFamilyRepository familyRepository,
             IUserRepository userRepository,
             ILogger<FamilyService> logger,
-            IMapper mapper
+            IMapper mapper,
+            IOptions<CommonOptions> options
             )
         {
             _familyRepository = familyRepository;
             _userRepository = userRepository;
             _logger = logger;
             _mapper = mapper;
+            _options = options.Value;
         }
 
-
-        public async Task<CreateFamilyResponse> CreateFamilyAsync(int userId, string familyName)
+        public async Task<FamilyResponse?> CreateFamilyAsync(int userId, string familyName)
         {
-            // 1. Get last family to generate code
-            var lastFamily = await _familyRepository.GetLastFamilyAsync();
-
-            string newFamilyCode = GenerateFamilyCode(lastFamily?.FamilyCode);
-            string invitationCode = GenerateInvitationCode();
-
-            // 2. Create new Family entity
-            var family = new Family
+            try
             {
-                FamilyName = familyName,
-                FamilyCode = newFamilyCode,
-                InvitationCode = invitationCode,
-                Status = true,
-                CreatedBy = userId,
-                CreatedOn = DateTime.UtcNow,
-                UpdatedOn = DateTime.UtcNow,
-            };
+                //Check the user exisit:
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                if (user == null) {
+                    return null;
+                }
 
-            // 3. Save the family
-            await _familyRepository.AddFamilyAsync(family);
+                // 1. Get last family to generate code
+                var lastFamily = await _familyRepository.GetLastFamilyAsync();
 
-            Console.WriteLine(family.FamilyId);
+                string newFamilyCode = GenerateFamilyCode(lastFamily?.FamilyCode);
+                string invitationCode = GenerateInvitationCode();
 
-            // 4. Add user as a family member (Owner)
-            //await _userRepository.AddFamilyMemberAsync(new FamilyMember
-            //{
-            //    FamilyId = family.FamilyId,
-            //    UserId = userId,
-            //    Role = "Owner",
-            //    JoinedOn = DateTime.UtcNow
-            //});
+                // 2. Create new Family entity
+                var family = new Family
+                {
+                    FamilyName = familyName,
+                    FamilyCode = newFamilyCode,
+                    InvitationCode = invitationCode,
+                    Status = true,
+                    CreatedBy = userId,
+                    CreatedOn = DateTime.UtcNow,
+                    UpdatedOn = DateTime.UtcNow,
+                };
 
-            return new CreateFamilyResponse
+                // 3. Save the family
+                await _familyRepository.AddFamilyAsync(family);
+
+                //Update user details
+                await _userRepository.UpdateFamilyDetailAsync(userId, family.FamilyId);
+
+                return new FamilyResponse
+                {
+                    FamilyId = family.FamilyId,
+                    FamilyCode = newFamilyCode,
+                    InvitationCode = invitationCode,
+                    InvitationLink = $"{_options.RootUrl}/invite?code={invitationCode}"
+                };
+            }
+            catch(Exception ex)
             {
-                FamilyId = family.FamilyId,
-                FamilyCode = newFamilyCode,
-                InvitationCode = invitationCode,
-                InvitationLink = $"https://famledger.com/invite?code={invitationCode}"
-            };
+                _logger.LogError(ex, "Error occurred in CreateFamilyAsync method for User ID: {UserId}", userId);
+                throw;
+            } 
         }
 
         private string GenerateFamilyCode(string? lastCode)

@@ -9,6 +9,6 @@ namespace FamLedger.Application.Interfaces
 {
     public interface IFamilyService
     {
-        Task<CreateFamilyResponse> CreateFamilyAsync(int userId, string familyName);
+        Task<FamilyResponse> CreateFamilyAsync(int userId, string familyName);
     }
 }

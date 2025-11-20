@@ -1,4 +1,5 @@
 using FamLedger.Application.Interfaces;
+using FamLedger.Application.Options;
 using FamLedger.Application.Profiles;
 using FamLedger.Application.Services;
 using FamLedger.Infrastructure.Data;
@@ -29,6 +30,10 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
             IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings["Key"] ?? string.Empty))
         };
     });
+
+//Common configuration binding.
+builder.Services.Configure<CommonOptions>(builder.Configuration.GetSection("Configuration"));
+
 
 builder.Services.AddAuthorization();
 
