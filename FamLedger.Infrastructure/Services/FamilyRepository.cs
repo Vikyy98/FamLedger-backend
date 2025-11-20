@@ -29,7 +29,7 @@ namespace FamLedger.Infrastructure.Services
 
         public async Task AddFamilyAsync(Family family)
         {
-            _context.Family.Add(family);
+            _context.Family.Add(family);         
             await _context.SaveChangesAsync();
         }
     }

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace FamLedger.Application.DTOs.Response
 {
-    public class CreateFamilyResponse
+    public class FamilyResponse
     {
         public int FamilyId {  get; set; }
         public string? FamilyCode { get; set; }

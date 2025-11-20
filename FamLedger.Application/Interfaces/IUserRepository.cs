@@ -11,6 +11,7 @@ namespace FamLedger.Application.Interfaces
     {
         Task<List<User>> GetUsersAsync();
         Task<User> GetUserByIdAsync(int userId);
-        Task<bool> RegisterUserAsync(User user); 
+        Task<bool> RegisterUserAsync(User user);
+        Task UpdateFamilyDetailAsync(int userId, int familyId);
     }
 }

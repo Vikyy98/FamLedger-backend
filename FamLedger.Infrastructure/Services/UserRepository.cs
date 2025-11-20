@@ -27,24 +27,21 @@ namespace FamLedger.Infrastructure.Services
                 var users = await _context.User.ToListAsync();
                 return users ?? new List<User>();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error occurred in GetUserAsync method");
-                return new List<User>();
+                throw;
             }
         }
 
-        public async Task<User> GetUserByIdAsync(int userId)
+        public async Task<User?> GetUserByIdAsync(int userId)
         {
             try
             {
-                var user = await _context.User.FirstOrDefaultAsync(u => u.UserId == userId);
-                return user ?? new User();
+                return await _context.User.FindAsync(userId);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error occurred in GetUserByIdAsync method");
-                return  new User();
+                throw;
             }
         }
 
@@ -56,10 +53,26 @@ namespace FamLedger.Infrastructure.Services
                 int count = await _context.SaveChangesAsync();
                 return count > 0;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                _logger.LogError(ex, "Error occurred in RegisterUserAsync method");
-                return false;
+                throw;
+            }
+        }
+
+        public async Task UpdateFamilyDetailAsync(int userId, int familyId)
+        {
+            try
+            {
+                var user = await _context.User.FindAsync(userId);
+                if (user != null)
+                {
+                    user.FamilyId = familyId;
+                    await _context.SaveChangesAsync();
+                }
+            }
+            catch (Exception)
+            {
+                throw;
             }
         }
     }
