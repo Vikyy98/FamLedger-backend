@@ -40,10 +40,11 @@ jobs:
       uses: actions/download-artifact@v4
       with:
         name: dotnet-app
+        path: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/publish
 
     - name: Deploy to Azure WebApp
       uses: azure/webapps-deploy@v3
       with:
         app-name: ${{ env.AZURE_WEBAPP_NAME }}
-        publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }} # Use the secret created in Step 2
+        publish-profile: ${{ secrets.AZURE_API_PUBLISH_PROFILE }}
         package: ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/publish
