@@ -22,7 +22,7 @@ jobs:
     - name: Build and Publish
       run: |
         dotnet restore
-        dotnet publish FamLedger.Api.csproj -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/publish
+        dotnet publish FamLedger.Api/FamLedger.Api.csproj -c Release -o ${{ env.AZURE_WEBAPP_PACKAGE_PATH }}/publish
     
     - name: Upload artifact for deployment
       uses: actions/upload-artifact@v4
