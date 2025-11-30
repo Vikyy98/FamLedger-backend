@@ -1,5 +1,6 @@
 ﻿using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
+using FamLedger.Application.Utilities;
 using FamLedger.Domain.Entities;
 using FamLedger.Domain.Enums;
 using Microsoft.AspNetCore.Http;
@@ -33,6 +34,34 @@ namespace FamLedger.Api.Controllers
             {
                 _logger.LogError(ex, "Error occurred in IncomeDetails method");
                 return NotFound(new IncomeResponseDto());
+            }
+        }
+
+        [HttpGet("categories")]
+        public IActionResult GetIncomeCategories()
+        {
+            try
+            {
+                var categories = Enum.GetValues(typeof(IncomeCategory))
+                    .Cast<IncomeCategory>()
+                    .Select(category => new IncomeCategoryDto
+                    {
+                        CategoryId = (int)category,
+                        CategoryName = category.GetDescription()
+                    })
+                    .ToList();
+
+                var response = new IncomeCategoriesResponseDto
+                {
+                    Categories = categories
+                };
+
+                return Ok(response);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetIncomeCategories method");
+                return StatusCode(500, "An error occurred while retrieving income categories");
             }
         }
 
