@@ -12,11 +12,11 @@ namespace FamLedger.Infrastructure.Data
     {
         public FamLedgerDbContext(DbContextOptions<FamLedgerDbContext> options) : base(options)
         {
-           
+
         }
 
         public DbSet<User> User { get; set; } = null!;
-        public DbSet<Income> Income {  get; set; } = null!;
+        public DbSet<Income> Income { get; set; } = null!;
         public DbSet<Expense> Expense { get; set; } = null!;
         public DbSet<Asset> Asset { get; set; } = null!;
         public DbSet<Family> Family { get; set; } = null!;
@@ -31,12 +31,12 @@ namespace FamLedger.Infrastructure.Data
             modelBuilder.Entity<Family>().HasMany(f => f.Expenses).WithOne(e => e.Family).HasForeignKey(e => e.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Assets).WithOne(a => a.Family).HasForeignKey(a => a.FamilyId).OnDelete(DeleteBehavior.Restrict);
 
-            modelBuilder.Entity<User>().HasMany(u=>u.Incomes).WithOne(i=>i.User).HasForeignKey(i=>i.UserId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<User>().HasMany(u=>u.Expenses).WithOne(e=>e.User).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<User>().HasMany(u => u.Incomes).WithOne(i => i.User).HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<User>().HasMany(u => u.Expenses).WithOne(e => e.User).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<User>().HasMany(u => u.Assets).WithOne(a => a.User).HasForeignKey(a => a.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
 
             //Adding constraints
-            modelBuilder.Entity<User>().HasIndex(e => e.Email).IsUnique(); 
+            modelBuilder.Entity<User>().HasIndex(e => e.Email).IsUnique();
             modelBuilder.Entity<Family>().HasIndex(entity => entity.FamilyCode).IsUnique();
             modelBuilder.Entity<Loan>().Property(entity => entity.InterestRate).HasPrecision(18, 2);
 
