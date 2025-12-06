@@ -12,6 +12,9 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
+Console.WriteLine("DB CONN = " +
+    (string.IsNullOrWhiteSpace(connectionString) ? "NULL" : "FOUND"));
+
 
 builder.Services.AddDbContext<FamLedgerDbContext>(options => options.UseNpgsql(connectionString));
 
