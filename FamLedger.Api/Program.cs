@@ -12,9 +12,7 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine("DB CONN = " +
-    (string.IsNullOrWhiteSpace(connectionString) ? "NULL" : "FOUND"));
-
+Console.WriteLine("DB CONN = " + (string.IsNullOrWhiteSpace(connectionString) ? "NULL" : "FOUND"));
 
 builder.Services.AddDbContext<FamLedgerDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -37,19 +35,19 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 //Common configuration binding.
 builder.Services.Configure<CommonOptions>(builder.Configuration.GetSection("Configuration"));
 
-
 builder.Services.AddAuthorization();
 
+var allowedOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>();
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowFrontend",
-        policy =>
-        {
-            policy.WithOrigins("http://localhost:3000", "https://localhost:7059", "https://localhost:5267") // Next.js local URL
-                  .AllowAnyHeader()
-                  .AllowAnyMethod()
-                  .AllowCredentials(); // For cookies/JWT
-        });
+    options.AddPolicy("FrontendCors", policy =>
+    {
+        policy
+            .WithOrigins(allowedOrigins!)
+            .AllowAnyHeader()
+            .AllowAnyMethod()
+            .AllowCredentials();
+    });
 });
 
 builder.Services.AddScoped<IUserService, UserService>();
@@ -71,7 +69,7 @@ builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-app.UseCors("AllowFrontend");
+app.UseCors("FrontendCors");
 // Configure the HTTP request pipeline.
 
 if (app.Environment.IsDevelopment())
