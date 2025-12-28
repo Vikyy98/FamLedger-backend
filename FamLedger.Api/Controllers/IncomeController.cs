@@ -1,4 +1,5 @@
-﻿using FamLedger.Application.DTOs.Response;
+﻿using FamLedger.Application.DTOs.Request;
+using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using FamLedger.Application.Utilities;
 using FamLedger.Domain.Entities;
@@ -17,12 +18,12 @@ namespace FamLedger.Api.Controllers
         private readonly ILogger<IncomeController> _logger;
 
         public IncomeController(IIncomeService incomeService, ILogger<IncomeController> logger)
-        {    
+        {
             _incomeService = incomeService;
             _logger = logger;
         }
 
-        [HttpGet("details/{familyId}")]
+        [HttpGet("/api/families/{familyId}/incomes")]
         public async Task<IActionResult> IncomeDetails(int familyId)
         {
             try
@@ -33,7 +34,7 @@ namespace FamLedger.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in IncomeDetails method");
-                return NotFound(new IncomeResponseDto());
+                return StatusCode(500, "An error occurred while retrieving income details");
             }
         }
 
@@ -62,6 +63,48 @@ namespace FamLedger.Api.Controllers
             {
                 _logger.LogError(ex, "Error occurred in GetIncomeCategories method");
                 return StatusCode(500, "An error occurred while retrieving income categories");
+            }
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> AddIncome([FromBody] IncomeRequestDto incomeRequest)
+        {
+            try
+            {
+                if (incomeRequest == null || !ModelState.IsValid)
+                {
+                    return BadRequest(ModelState);
+                }
+
+                var incomeResponse = await _incomeService.AddIncomeAsync(incomeRequest);
+                if (incomeResponse == null)
+                {
+                    return StatusCode(500, "Failed to add income");
+                }
+
+                return CreatedAtAction(nameof(GetIncomeById), new { familyId = incomeResponse.FamilyId, incomeId = incomeResponse.IncomeId }, incomeResponse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in AddIncome method");
+                return StatusCode(500, "An error occurred while adding income");
+            }
+        }
+
+        [HttpGet("/api/families/{familyId}/incomes/{incomeId}")]
+        public async Task<IActionResult> GetIncomeById(int familyId, int incomeId)
+        {
+            try
+            {
+                var income = await _incomeService.GetIncomeByIdAsync(incomeId);
+                if (income == null) return NotFound();
+                if (income.FamilyId != familyId) return NotFound();
+                return Ok(income);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetIncomeById method");
+                return StatusCode(500, "An error occurred while retrieving income");
             }
         }
 

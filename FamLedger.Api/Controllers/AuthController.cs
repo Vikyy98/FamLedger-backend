@@ -8,7 +8,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FamLedger.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -24,39 +24,9 @@ namespace FamLedger.Api.Controllers
             _userService = userService;
         }
 
-        [HttpPost("register")]
-        public async Task<IActionResult> Register([FromBody] RegisterUserRequest createUser)
-        {
-            try
-            {
-                //Validate user data
-                if (createUser == null || string.IsNullOrWhiteSpace(createUser.FullName) || string.IsNullOrWhiteSpace(createUser.Email) || string.IsNullOrWhiteSpace(createUser.Password))
-                {
-                    return BadRequest("User data is missing");
-                }
 
-                //Check if mail is already there
-                var users = await _userService.GetUserAsync();
-                var isEmailExist = users.Any(u => string.Equals(u.Email, createUser.Email));
-                if (isEmailExist)
-                {
-                    return Conflict("Email already exists");
-                }
 
-                //Register User
-                var response = await _userService.RegisterUserAsync(createUser);
-                if (response == null) { return BadRequest("Register User Failed - Reponse is empty"); }
-
-                return Ok(response);
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, "Error occurred in Register method");
-                return BadRequest(ex);
-            }
-        }
-
-        [HttpPost("login")]
+        [HttpPost("token")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest user)
         {
             try

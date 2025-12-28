@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FamLedger.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/families")]
     [ApiController]
     public class FamilyController : ControllerBase
     {
@@ -35,11 +35,29 @@ namespace FamLedger.Api.Controllers
                 {
                     return NotFound("User not found");
                 }
-                return familyResponse;
+
+                // Return 201 Created with Location header
+                return Created($"/api/families/{familyResponse.FamilyId}", familyResponse);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while creating family");
+                return StatusCode(500, new { message = "An internal error occurred" });
+            }
+        }
+
+        [HttpGet("{id:int}")]
+        public async Task<ActionResult<FamilyResponse>> GetFamilyById(int id)
+        {
+            try
+            {
+                var family = await _familyService.GetFamilyByIdAsync(id);
+                if (family == null) return NotFound();
+                return Ok(family);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while fetching family");
                 return StatusCode(500, new { message = "An internal error occurred" });
             }
         }
