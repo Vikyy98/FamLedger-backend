@@ -1,25 +1,31 @@
-﻿using FamLedger.Domain.Enums;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using FamLedger.Domain.Enums;
 
-namespace FamLedger.Application.DTOs.Response
+namespace FamLedger.Application.DTOs.Request
 {
-    public class IncomeItemDto
+    public class IncomeRequestDto
     {
-        public int IncomeId { get; set; }
+        [Required]
         public int UserId { get; set; }
+
+        [Required]
         public int FamilyId { get; set; }
+
+        [Required]
+        [StringLength(200)]
         public string? Source { get; set; }
+
         public IncomeCategory Category { get; set; }
-        public string? CategoryName { get; set; }
+
         public IncomeType Type { get; set; }
-        public string? TypeName { get; set; }
+
+        [Required]
+        [Range(0.01, double.MaxValue)]
         public decimal Amount { get; set; }
-        public bool Status { get; set; }
-        public DateTime CreatedOn { get; set; }
-        public DateTime UpdatedOn { get; set; }
     }
 }

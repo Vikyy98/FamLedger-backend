@@ -37,7 +37,8 @@ namespace FamLedger.Application.Services
             {
                 //Check the user exisit:
                 var user = await _userRepository.GetUserByIdAsync(userId);
-                if (user == null) {
+                if (user == null)
+                {
                     return null;
                 }
 
@@ -73,11 +74,33 @@ namespace FamLedger.Application.Services
                     InvitationLink = $"{_options.RootUrl}/invite?code={invitationCode}"
                 };
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in CreateFamilyAsync method for User ID: {UserId}", userId);
                 throw;
-            } 
+            }
+        }
+
+        public async Task<FamilyResponse?> GetFamilyByIdAsync(int familyId)
+        {
+            try
+            {
+                var family = await _familyRepository.GetFamilyByIdAsync(familyId);
+                if (family == null) return null;
+
+                return new FamilyResponse
+                {
+                    FamilyId = family.FamilyId,
+                    FamilyCode = family.FamilyCode,
+                    InvitationCode = family.InvitationCode,
+                    InvitationLink = $"{_options.RootUrl}/invite?code={family.InvitationCode}"
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetFamilyByIdAsync method for Family ID: {FamilyId}", familyId);
+                throw;
+            }
         }
 
         private string GenerateFamilyCode(string? lastCode)

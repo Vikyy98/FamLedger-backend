@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using FamLedger.Domain.Enums;
@@ -64,18 +65,18 @@ namespace FamLedger.Application.Services
                         i.Status &&
                         i.CreatedOn.Date >= lastMonthStart.Date &&
                         i.CreatedOn.Date < currentMonthStart.Date
-                    )     
+                    )
                     .ToList();
 
                 var recurringOfLastMonth = activeRecurringIncome.Where(i => i.CreatedOn.Date < currentMonthStart).ToList();
 
                 // Recurring Income Total
-                int totalRecurring = activeRecurringIncome.Sum(i => i.Amount);
-                int totalRecurringOfLastMonth = recurringOfLastMonth.Sum(i => i.Amount);
+                decimal totalRecurring = activeRecurringIncome.Sum(i => i.Amount);
+                decimal totalRecurringOfLastMonth = recurringOfLastMonth.Sum(i => i.Amount);
                 // CURRENT MONTH Total
-                int totalIncomeOfCurrentMonth = totalRecurring + oneTimeCurrentMonth.Sum(i => i.Amount);
+                decimal totalIncomeOfCurrentMonth = totalRecurring + oneTimeCurrentMonth.Sum(i => i.Amount);
                 // LAST MONTH Total
-                int totalIncomeOfLastMonth = totalRecurringOfLastMonth + oneTimeLastMonth.Sum(i => i.Amount);
+                decimal totalIncomeOfLastMonth = totalRecurringOfLastMonth + oneTimeLastMonth.Sum(i => i.Amount);
 
                 decimal percentageDifference = 0;
                 if (totalIncomeOfLastMonth != 0)
@@ -108,6 +109,35 @@ namespace FamLedger.Application.Services
             }
         }
 
+        public async Task<IncomeItemDto?> AddIncomeAsync(IncomeRequestDto income)
+        {
+            try
+            {
+                var incomeEntity = _mapper.Map<Domain.Entities.Income>(income);
+                var created = await _incomeRepository.AddIncomeAsync(incomeEntity);
+                var dto = _mapper.Map<IncomeItemDto>(created);
+                return dto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in AddIncomeAsync method for Family ID: {FamilyId}", income.FamilyId);
+                return null;
+            }
+        }
 
+        public async Task<IncomeItemDto?> GetIncomeByIdAsync(int incomeId)
+        {
+            try
+            {
+                var income = await _incomeRepository.GetIncomeByIdAsync(incomeId);
+                if (income == null) return null;
+                return _mapper.Map<IncomeItemDto>(income);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetIncomeByIdAsync for Income ID: {IncomeId}", incomeId);
+                return null;
+            }
+        }
     }
 }

@@ -27,9 +27,14 @@ namespace FamLedger.Infrastructure.Services
             return await _context.Family.Where(f => f.Status == true).OrderByDescending(f => f.CreatedOn).FirstOrDefaultAsync();
         }
 
+        public async Task<Family?> GetFamilyByIdAsync(int familyId)
+        {
+            return await _context.Family.FirstOrDefaultAsync(f => f.FamilyId == familyId && f.Status == true);
+        }
+
         public async Task AddFamilyAsync(Family family)
         {
-            _context.Family.Add(family);         
+            _context.Family.Add(family);
             await _context.SaveChangesAsync();
         }
     }

@@ -6,4 +6,3 @@ namespace FamLedger.Application.DTOs.Response
         public string CategoryName { get; set; } = string.Empty;
     }
 }
-

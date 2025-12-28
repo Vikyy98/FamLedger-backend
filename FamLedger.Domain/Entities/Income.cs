@@ -6,12 +6,11 @@ namespace FamLedger.Domain.Entities
     {
         public int IncomeId { get; set; }
         public int UserId { get; set; }
-        public string MemberName { get; set; } = string.Empty;
         public int FamilyId { get; set; }
-        public IncomeSource Source { get; set; }
+        public string? Source { get; set; }
         public IncomeCategory Category { get; set; }
         public IncomeType Type { get; set; }
-        public int Amount { get; set; }
+        public decimal Amount { get; set; }
         public bool Status { get; set; }
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }

@@ -13,6 +13,7 @@ namespace FamLedger.Application.Interfaces
     {
         Task<List<UserReponseDto>> GetUserAsync();
         Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest userRequest);
+        Task<UserReponseDto?> GetUserByIdAsync(int userId);
         string CreateToken(UserReponseDto userDetails);
     }
 }

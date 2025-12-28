@@ -3,12 +3,6 @@ using FamLedger.Domain.Entities;
 using FamLedger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
 namespace FamLedger.Infrastructure.Services
 {
     public class IncomeRepository : IIncomeRepository
@@ -39,6 +33,29 @@ namespace FamLedger.Infrastructure.Services
             {
                 _logger.LogError(ex, "An error occurred while retrieving income for FamilyId: {FamilyId}", familyId);
                 return new List<Income>();
+            }
+        }
+
+        public async Task<Income> AddIncomeAsync(Income income)
+        {
+            income.CreatedOn = DateTime.UtcNow;
+            income.UpdatedOn = DateTime.UtcNow;
+            income.Status = true;
+            _context.Income.Add(income);
+            await _context.SaveChangesAsync();
+            return income;
+        }
+
+        public async Task<Income?> GetIncomeByIdAsync(int incomeId)
+        {
+            try
+            {
+                return await _context.Income.FirstOrDefaultAsync(i => i.IncomeId == incomeId && i.Status == true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching income by id {IncomeId}", incomeId);
+                return null;
             }
         }
     }

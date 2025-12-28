@@ -10,6 +10,7 @@ namespace FamLedger.Application.Interfaces
     public interface IFamilyRepository
     {
         Task<Family?> GetLastFamilyAsync();
+        Task<Family?> GetFamilyByIdAsync(int familyId);
         Task AddFamilyAsync(Family family); 
     }
 }

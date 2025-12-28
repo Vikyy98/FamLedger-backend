@@ -118,5 +118,21 @@ namespace FamLedger.Application.Services
                 return string.Empty;
             }
         }
+
+        public async Task<UserReponseDto?> GetUserByIdAsync(int userId)
+        {
+            try
+            {
+                var user = await _userRepository.GetUserByIdAsync(userId);
+                if (user == null) return null;
+                var dto = _mapper.Map<UserReponseDto>(user);
+                return dto;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in GetUserByIdAsync method");
+                return null;
+            }
+        }
     }
 }

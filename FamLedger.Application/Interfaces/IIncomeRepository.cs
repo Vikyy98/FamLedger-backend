@@ -10,5 +10,8 @@ namespace FamLedger.Application.Interfaces
     public interface IIncomeRepository
     {
         Task<List<Income>> GetIncomeDetailsAsync(int familyId);
+
+        Task<Income> AddIncomeAsync(Income income);
+        Task<Income?> GetIncomeByIdAsync(int incomeId);
     }
 }

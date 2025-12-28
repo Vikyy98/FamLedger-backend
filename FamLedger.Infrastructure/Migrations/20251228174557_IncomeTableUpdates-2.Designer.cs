@@ -3,6 +3,7 @@ using System;
 using FamLedger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FamLedger.Infrastructure.Migrations
 {
     [DbContext(typeof(FamLedgerDbContext))]
-    partial class FamLedgerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251228174557_IncomeTableUpdates-2")]
+    partial class IncomeTableUpdates2
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
