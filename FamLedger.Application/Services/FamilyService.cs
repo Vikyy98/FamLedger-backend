@@ -64,11 +64,11 @@ namespace FamLedger.Application.Services
                 await _familyRepository.AddFamilyAsync(family);
 
                 //Update user details
-                await _userRepository.UpdateFamilyDetailAsync(userId, family.FamilyId);
+                await _userRepository.UpdateFamilyDetailAsync(userId, family.Id);
 
                 return new FamilyResponse
                 {
-                    FamilyId = family.FamilyId,
+                    FamilyId = family.Id,
                     FamilyCode = newFamilyCode,
                     InvitationCode = invitationCode,
                     InvitationLink = $"{_options.RootUrl}/invite?code={invitationCode}"
@@ -90,7 +90,7 @@ namespace FamLedger.Application.Services
 
                 return new FamilyResponse
                 {
-                    FamilyId = family.FamilyId,
+                    FamilyId = family.Id,
                     FamilyCode = family.FamilyCode,
                     InvitationCode = family.InvitationCode,
                     InvitationLink = $"{_options.RootUrl}/invite?code={family.InvitationCode}"

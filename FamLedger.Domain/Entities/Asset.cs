@@ -8,9 +8,9 @@ namespace FamLedger.Domain.Entities
 {
     public class Asset
     {
-        public int AssetId { get; set; }
+        public int Id { get; set; }
 
-        public int FamilyId {  get; set; }
+        public int FamilyId { get; set; }
 
         public string AssetName { get; set; } = string.Empty;
 
@@ -26,9 +26,9 @@ namespace FamLedger.Domain.Entities
 
         public bool Status { get; set; } = true;
 
-        public DateTime CreatedOn {  get; set; } 
+        public DateTime CreatedOn { get; set; }
 
-        public DateTime UpdatedOn { get; set;}
+        public DateTime UpdatedOn { get; set; }
 
         public User User { get; set; }
         public Family Family { get; set; }

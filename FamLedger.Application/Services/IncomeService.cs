@@ -47,12 +47,11 @@ namespace FamLedger.Application.Services
                 DateTime lastMonthStart = currentMonthStart.AddMonths(-1);
 
                 // Income created before the start of the next month is considered active now.
-                var activeRecurringIncome = incomeDetails.Where(i => i.Type == IncomeType.Recurring && i.Status).ToList();
+                var activeRecurringIncome = incomeDetails.Where(i => i.Status).ToList();
 
                 // ONE-TIME Income (Current Month)
                 var oneTimeCurrentMonth = incomeDetails
                     .Where(i =>
-                        i.Type == IncomeType.OneTime &&
                         i.Status &&
                         i.CreatedOn.Date >= currentMonthStart.Date
                     )
@@ -61,7 +60,6 @@ namespace FamLedger.Application.Services
                 // ONE-TIME Income (Last Month)
                 var oneTimeLastMonth = incomeDetails
                     .Where(i =>
-                        i.Type == IncomeType.OneTime &&
                         i.Status &&
                         i.CreatedOn.Date >= lastMonthStart.Date &&
                         i.CreatedOn.Date < currentMonthStart.Date
