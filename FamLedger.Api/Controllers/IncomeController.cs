@@ -82,7 +82,7 @@ namespace FamLedger.Api.Controllers
                     return StatusCode(500, "Failed to add income");
                 }
 
-                return CreatedAtAction(nameof(GetIncomeById), new { familyId = incomeResponse.FamilyId, incomeId = incomeResponse.IncomeId }, incomeResponse);
+                return CreatedAtAction(nameof(GetIncomeById), new { familyId = incomeResponse.FamilyId, incomeId = incomeResponse.Id }, incomeResponse);
             }
             catch (Exception ex)
             {
