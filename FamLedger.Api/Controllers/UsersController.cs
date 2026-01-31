@@ -38,7 +38,7 @@ namespace FamLedger.Api.Controllers
                 var response = await _userService.RegisterUserAsync(request);
                 if (response == null) return BadRequest("Register User Failed");
 
-                return Created($"/api/users/{response.UserId}", response);
+                return Created($"/api/users/{response.Id}", response);
             }
             catch (Exception ex)
             {
