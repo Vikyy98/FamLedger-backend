@@ -9,7 +9,7 @@ namespace FamLedger.Application.DTOs.Response
 {
     public class IncomeItemDto
     {
-        public int IncomeId { get; set; }
+        public int Id { get; set; }
         public int UserId { get; set; }
         public int FamilyId { get; set; }
         public string? Source { get; set; }

@@ -93,7 +93,7 @@ namespace FamLedger.Application.Services
 
                 var claims = new[]
                 {
-                new Claim(JwtRegisteredClaimNames.Sub,userDetails.UserId.ToString()),
+                new Claim(JwtRegisteredClaimNames.Sub,userDetails.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email,userDetails.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, userDetails.FullName),

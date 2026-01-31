@@ -115,11 +115,11 @@ namespace FamLedger.Infrastructure.Migrations
 
             modelBuilder.Entity("FamLedger.Domain.Entities.Family", b =>
                 {
-                    b.Property<int>("FamilyId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("FamilyId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("CreatedBy")
                         .HasColumnType("integer");
@@ -145,7 +145,7 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("FamilyId");
+                    b.HasKey("Id");
 
                     b.HasIndex("FamilyCode")
                         .IsUnique();
@@ -155,17 +155,14 @@ namespace FamLedger.Infrastructure.Migrations
 
             modelBuilder.Entity("FamLedger.Domain.Entities.Income", b =>
                 {
-                    b.Property<int>("IncomeId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("IncomeId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<decimal>("Amount")
                         .HasColumnType("numeric");
-
-                    b.Property<int>("Category")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
@@ -173,14 +170,14 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Property<int>("FamilyId")
                         .HasColumnType("integer");
 
+                    b.Property<DateOnly>("IncomeDate")
+                        .HasColumnType("date");
+
                     b.Property<string>("Source")
                         .HasColumnType("text");
 
                     b.Property<bool>("Status")
                         .HasColumnType("boolean");
-
-                    b.Property<int>("Type")
-                        .HasColumnType("integer");
 
                     b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
@@ -188,7 +185,7 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
-                    b.HasKey("IncomeId");
+                    b.HasKey("Id");
 
                     b.HasIndex("FamilyId");
 
@@ -199,11 +196,11 @@ namespace FamLedger.Infrastructure.Migrations
 
             modelBuilder.Entity("FamLedger.Domain.Entities.Loan", b =>
                 {
-                    b.Property<int>("LoanId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("LoanId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<int>("Amount")
                         .HasColumnType("integer");
@@ -246,7 +243,7 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Property<int>("UserId")
                         .HasColumnType("integer");
 
-                    b.HasKey("LoanId");
+                    b.HasKey("Id");
 
                     b.HasIndex("FamilyId");
 
@@ -255,13 +252,57 @@ namespace FamLedger.Infrastructure.Migrations
                     b.ToTable("Loans", (string)null);
                 });
 
-            modelBuilder.Entity("FamLedger.Domain.Entities.User", b =>
+            modelBuilder.Entity("FamLedger.Domain.Entities.RecurringIncome", b =>
                 {
-                    b.Property<int>("UserId")
+                    b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
                         .HasColumnType("integer");
 
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("UserId"));
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<decimal>("Amount")
+                        .HasColumnType("numeric");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("FamilyId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("Frequency")
+                        .HasColumnType("text");
+
+                    b.Property<string>("Source")
+                        .HasColumnType("text");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<bool>("Status")
+                        .HasColumnType("boolean");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("RecurringIncomes", (string)null);
+                });
+
+            modelBuilder.Entity("FamLedger.Domain.Entities.User", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("timestamp with time zone");
@@ -291,7 +332,7 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Property<DateTime>("UpdatedOn")
                         .HasColumnType("timestamp with time zone");
 
-                    b.HasKey("UserId");
+                    b.HasKey("Id");
 
                     b.HasIndex("Email")
                         .IsUnique();
@@ -377,6 +418,25 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FamLedger.Domain.Entities.RecurringIncome", b =>
+                {
+                    b.HasOne("FamLedger.Domain.Entities.Family", "Family")
+                        .WithMany("RecurringIncomes")
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FamLedger.Domain.Entities.User", "User")
+                        .WithMany("RecurringIncomes")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Family");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FamLedger.Domain.Entities.User", b =>
                 {
                     b.HasOne("FamLedger.Domain.Entities.Family", "Family")
@@ -395,6 +455,8 @@ namespace FamLedger.Infrastructure.Migrations
 
                     b.Navigation("Incomes");
 
+                    b.Navigation("RecurringIncomes");
+
                     b.Navigation("Users");
                 });
 
@@ -405,6 +467,8 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Navigation("Expenses");
 
                     b.Navigation("Incomes");
+
+                    b.Navigation("RecurringIncomes");
                 });
 #pragma warning restore 612, 618
         }

@@ -26,9 +26,7 @@ namespace FamLedger.Application.Profiles
 
             CreateMap<UserReponseDto, UserLoginResponse>().ForMember(dest => dest.Name, opt => opt.MapFrom(src => src.FullName));
 
-            CreateMap<Income, IncomeItemDto>().ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount))
-                .ForMember(dest => dest.CategoryName, opt => opt.MapFrom(src => src.Category.GetDescription()))
-                .ForMember(dest => dest.TypeName, opt => opt.MapFrom(src => src.Type.GetDescription()));
+            CreateMap<Income, IncomeItemDto>().ForMember(dest => dest.Amount, opt => opt.MapFrom(src => src.Amount));
 
             CreateMap<IncomeItemDto, Income>().ForMember(dest => dest.UpdatedOn, opt => opt.MapFrom(src => DateTime.UtcNow))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src => true));

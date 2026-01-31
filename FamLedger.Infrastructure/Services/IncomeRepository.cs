@@ -50,7 +50,7 @@ namespace FamLedger.Infrastructure.Services
         {
             try
             {
-                return await _context.Income.FirstOrDefaultAsync(i => i.IncomeId == incomeId && i.Status == true);
+                return await _context.Income.FirstOrDefaultAsync(i => i.Id == incomeId && i.Status == true);
             }
             catch (Exception ex)
             {

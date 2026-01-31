@@ -16,7 +16,7 @@ namespace FamLedger.Infrastructure.Migrations
                 name: "Families",
                 columns: table => new
                 {
-                    FamilyId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FamilyName = table.Column<string>(type: "text", nullable: false),
                     FamilyCode = table.Column<string>(type: "text", nullable: false),
@@ -28,14 +28,14 @@ namespace FamLedger.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Families", x => x.FamilyId);
+                    table.PrimaryKey("PK_Families", x => x.Id);
                 });
 
             migrationBuilder.CreateTable(
                 name: "Users",
                 columns: table => new
                 {
-                    UserId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     FamilyId = table.Column<int>(type: "integer", nullable: true),
                     FullName = table.Column<string>(type: "text", nullable: false),
@@ -48,12 +48,12 @@ namespace FamLedger.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Users", x => x.UserId);
+                    table.PrimaryKey("PK_Users", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Users_Families_FamilyId",
                         column: x => x.FamilyId,
                         principalTable: "Families",
-                        principalColumn: "FamilyId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                 });
 
@@ -81,13 +81,13 @@ namespace FamLedger.Infrastructure.Migrations
                         name: "FK_Assets_Families_FamilyId",
                         column: x => x.FamilyId,
                         principalTable: "Families",
-                        principalColumn: "FamilyId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Assets_Users_OwnerUserId",
                         column: x => x.OwnerUserId,
                         principalTable: "Users",
-                        principalColumn: "UserId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -113,13 +113,13 @@ namespace FamLedger.Infrastructure.Migrations
                         name: "FK_Expenses_Families_FamilyId",
                         column: x => x.FamilyId,
                         principalTable: "Families",
-                        principalColumn: "FamilyId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Expenses_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "UserId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -127,33 +127,31 @@ namespace FamLedger.Infrastructure.Migrations
                 name: "Incomes",
                 columns: table => new
                 {
-                    IncomeId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
-                    MemberName = table.Column<string>(type: "text", nullable: false),
                     FamilyId = table.Column<int>(type: "integer", nullable: false),
-                    Source = table.Column<int>(type: "integer", nullable: false),
-                    Category = table.Column<int>(type: "integer", nullable: false),
-                    Type = table.Column<int>(type: "integer", nullable: false),
-                    Amount = table.Column<int>(type: "integer", nullable: false),
+                    Source = table.Column<string>(type: "text", nullable: true),
+                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
                     Status = table.Column<bool>(type: "boolean", nullable: false),
+                    IncomeDate = table.Column<DateOnly>(type: "date", nullable: false),
                     CreatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
                     UpdatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Incomes", x => x.IncomeId);
+                    table.PrimaryKey("PK_Incomes", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Incomes_Families_FamilyId",
                         column: x => x.FamilyId,
                         principalTable: "Families",
-                        principalColumn: "FamilyId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Restrict);
                     table.ForeignKey(
                         name: "FK_Incomes_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "UserId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -161,7 +159,7 @@ namespace FamLedger.Infrastructure.Migrations
                 name: "Loans",
                 columns: table => new
                 {
-                    LoanId = table.Column<int>(type: "integer", nullable: false)
+                    Id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     UserId = table.Column<int>(type: "integer", nullable: false),
                     FamilyId = table.Column<int>(type: "integer", nullable: false),
@@ -179,18 +177,51 @@ namespace FamLedger.Infrastructure.Migrations
                 },
                 constraints: table =>
                 {
-                    table.PrimaryKey("PK_Loans", x => x.LoanId);
+                    table.PrimaryKey("PK_Loans", x => x.Id);
                     table.ForeignKey(
                         name: "FK_Loans_Families_FamilyId",
                         column: x => x.FamilyId,
                         principalTable: "Families",
-                        principalColumn: "FamilyId",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                     table.ForeignKey(
                         name: "FK_Loans_Users_UserId",
                         column: x => x.UserId,
                         principalTable: "Users",
-                        principalColumn: "UserId",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "RecurringIncomes",
+                columns: table => new
+                {
+                    Id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    UserId = table.Column<int>(type: "integer", nullable: false),
+                    FamilyId = table.Column<int>(type: "integer", nullable: false),
+                    Source = table.Column<string>(type: "text", nullable: true),
+                    Amount = table.Column<decimal>(type: "numeric", nullable: false),
+                    Status = table.Column<bool>(type: "boolean", nullable: false),
+                    StartDate = table.Column<DateOnly>(type: "date", nullable: false),
+                    Frequency = table.Column<string>(type: "text", nullable: true),
+                    CreatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false),
+                    UpdatedOn = table.Column<DateTime>(type: "timestamp with time zone", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_RecurringIncomes", x => x.Id);
+                    table.ForeignKey(
+                        name: "FK_RecurringIncomes_Families_FamilyId",
+                        column: x => x.FamilyId,
+                        principalTable: "Families",
+                        principalColumn: "Id",
+                        onDelete: ReferentialAction.Restrict);
+                    table.ForeignKey(
+                        name: "FK_RecurringIncomes_Users_UserId",
+                        column: x => x.UserId,
+                        principalTable: "Users",
+                        principalColumn: "Id",
                         onDelete: ReferentialAction.Cascade);
                 });
 
@@ -241,6 +272,16 @@ namespace FamLedger.Infrastructure.Migrations
                 column: "UserId");
 
             migrationBuilder.CreateIndex(
+                name: "IX_RecurringIncomes_FamilyId",
+                table: "RecurringIncomes",
+                column: "FamilyId");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_RecurringIncomes_UserId",
+                table: "RecurringIncomes",
+                column: "UserId");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_Users_Email",
                 table: "Users",
                 column: "Email",
@@ -266,6 +307,9 @@ namespace FamLedger.Infrastructure.Migrations
 
             migrationBuilder.DropTable(
                 name: "Loans");
+
+            migrationBuilder.DropTable(
+                name: "RecurringIncomes");
 
             migrationBuilder.DropTable(
                 name: "Users");

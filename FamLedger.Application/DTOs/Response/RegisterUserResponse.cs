@@ -8,9 +8,9 @@ namespace FamLedger.Application.DTOs.Response
 {
     public class RegisterUserResponse
     {
-        public int UserId { get; set; }
+        public int Id { get; set; }
         public string? UserName { get; set; }
         public int? FamilyId { get; set; }
-        public string? FamilyCode {  get; set; }
+        public string? FamilyCode { get; set; }
     }
 }

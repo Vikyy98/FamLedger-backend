@@ -29,7 +29,7 @@ namespace FamLedger.Infrastructure.Services
 
         public async Task<Family?> GetFamilyByIdAsync(int familyId)
         {
-            return await _context.Family.FirstOrDefaultAsync(f => f.FamilyId == familyId && f.Status == true);
+            return await _context.Family.FirstOrDefaultAsync(f => f.Id == familyId && f.Status == true);
         }
 
         public async Task AddFamilyAsync(Family family)

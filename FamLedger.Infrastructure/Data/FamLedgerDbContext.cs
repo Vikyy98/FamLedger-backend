@@ -1,10 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using FamLedger.Domain.Entities;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
 
 namespace FamLedger.Infrastructure.Data
 {
@@ -28,11 +23,12 @@ namespace FamLedger.Infrastructure.Data
             //Building Relations
             modelBuilder.Entity<Family>().HasMany(f => f.Users).WithOne(u => u.Family).HasForeignKey(u => u.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Incomes).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Family>().HasMany(f => f.RecurringIncomes).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Expenses).WithOne(e => e.Family).HasForeignKey(e => e.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Assets).WithOne(a => a.Family).HasForeignKey(a => a.FamilyId).OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<User>().HasMany(u => u.Incomes).WithOne(i => i.User).HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
-            modelBuilder.Entity<User>().HasMany(u => u.Expenses).WithOne(e => e.User).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<User>().HasMany(u => u.RecurringIncomes).WithOne(i => i.User).HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<User>().HasMany(u => u.Assets).WithOne(a => a.User).HasForeignKey(a => a.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
 
             //Adding constraints
@@ -47,6 +43,7 @@ namespace FamLedger.Infrastructure.Data
             modelBuilder.Entity<Expense>().ToTable("Expenses");
             modelBuilder.Entity<Loan>().ToTable("Loans");
             modelBuilder.Entity<Asset>().ToTable("Assets");
+            modelBuilder.Entity<RecurringIncome>().ToTable("RecurringIncomes");
 
         }
 
