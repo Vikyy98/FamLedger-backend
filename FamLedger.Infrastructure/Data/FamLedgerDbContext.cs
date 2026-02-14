@@ -12,6 +12,7 @@ namespace FamLedger.Infrastructure.Data
 
         public DbSet<User> User { get; set; } = null!;
         public DbSet<Income> Income { get; set; } = null!;
+        public DbSet<RecurringIncome> RecurringIncome { get; set; } = null!;
         public DbSet<Expense> Expense { get; set; } = null!;
         public DbSet<Asset> Asset { get; set; } = null!;
         public DbSet<Family> Family { get; set; } = null!;

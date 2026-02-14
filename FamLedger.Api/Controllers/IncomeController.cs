@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FamLedger.Api.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/income")]
     [ApiController]
     public class IncomeController : ControllerBase
     {
@@ -76,7 +76,11 @@ namespace FamLedger.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var incomeResponse = await _incomeService.AddIncomeAsync(incomeRequest);
+                var (incomeResponse, isDuplicate) = await _incomeService.AddIncomeAsync(incomeRequest);
+                if (isDuplicate)
+                {
+                    return Conflict("Duplicate income entry detected");
+                }
                 if (incomeResponse == null)
                 {
                     return StatusCode(500, "Failed to add income");

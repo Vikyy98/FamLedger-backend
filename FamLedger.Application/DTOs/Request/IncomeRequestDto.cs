@@ -20,12 +20,14 @@ namespace FamLedger.Application.DTOs.Request
         [StringLength(200)]
         public string? Source { get; set; }
 
-        public IncomeCategory Category { get; set; }
-
         public IncomeType Type { get; set; }
 
+        public string Frequency { get; set; } = "ONETIME";
+
         [Required]
-        [Range(0.01, double.MaxValue)]
+        [Range(0.00, double.MaxValue)]
         public decimal Amount { get; set; }
+
+        public DateOnly? DateReceived { get; set; }
     }
 }

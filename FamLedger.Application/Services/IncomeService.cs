@@ -107,19 +107,58 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<IncomeItemDto?> AddIncomeAsync(IncomeRequestDto income)
+        public async Task<(IncomeItemDto? incomeItemDto, bool IsDuplicate)> AddIncomeAsync(IncomeRequestDto income)
         {
             try
             {
-                var incomeEntity = _mapper.Map<Domain.Entities.Income>(income);
-                var created = await _incomeRepository.AddIncomeAsync(incomeEntity);
-                var dto = _mapper.Map<IncomeItemDto>(created);
-                return dto;
+                if (income == null) return (null, false);
+                if (income.Type == IncomeType.Recurring)
+                {
+                    // Ensure frequency default
+                    if (string.IsNullOrWhiteSpace(income.Frequency)) income.Frequency = "MONTHLY";
+
+                    // Check for duplicates
+                    bool isDuplicate = await _incomeRepository.IsDuplicateIncomeAsync(income);
+                    if (isDuplicate)
+                    {
+                        return (null, true);
+                    }
+
+                    var recurringEntity = _mapper.Map<Domain.Entities.RecurringIncome>(income);
+                    var createdRecurring = await _incomeRepository.AddRecurringIncomeasync(recurringEntity);
+                    if (createdRecurring == null) return (null, false);
+
+                    // Map RecurringIncome to IncomeItemDto (mapper must support it)
+                    var dto = _mapper.Map<IncomeItemDto>(createdRecurring);
+                    // RecurringIncome uses Id as primary key
+                    dto.Id = createdRecurring.Id;
+                    dto.CreatedOn = createdRecurring.CreatedOn;
+                    return (dto, false);
+                }
+                else
+                {
+                    // Check for duplicates
+                    bool isDuplicate = await _incomeRepository.IsDuplicateIncomeAsync(income);
+                    if (isDuplicate)
+                    {
+                        return (null, true);
+                    }
+
+                    var incomeEntity = _mapper.Map<Domain.Entities.Income>(income);
+                    var created = await _incomeRepository.AddIncomeAsync(incomeEntity);
+                    if (created == null) return (null, false);
+
+                    var dto = _mapper.Map<IncomeItemDto>(created);
+                    // Ensure Id mapping (Income.IncomeId)
+                    dto.Id = created.Id;
+                    dto.CreatedOn = created.CreatedOn;
+                    return (dto, false);
+                }
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error occurred in AddIncomeAsync method for Family ID: {FamilyId}", income.FamilyId);
-                return null;
+                _logger.LogError(ex, "Error occurred in AddIncomeAsync method for Family ID: {FamilyId}", income?.FamilyId);
+                return (null, false);
             }
         }
 
