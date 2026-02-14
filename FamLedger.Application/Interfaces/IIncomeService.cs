@@ -12,7 +12,7 @@ namespace FamLedger.Application.Interfaces
     public interface IIncomeService
     {
         Task<IncomeResponseDto> GetIncomeDetails(int familyId);
-        Task<IncomeItemDto?> AddIncomeAsync(IncomeRequestDto income);
+        Task<(IncomeItemDto? incomeItemDto, bool IsDuplicate)> AddIncomeAsync(IncomeRequestDto income);
         Task<IncomeItemDto?> GetIncomeByIdAsync(int incomeId);
     }
 }

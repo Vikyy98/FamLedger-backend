@@ -13,10 +13,9 @@ namespace FamLedger.Application.DTOs.Response
         public int UserId { get; set; }
         public int FamilyId { get; set; }
         public string? Source { get; set; }
-        public IncomeCategory Category { get; set; }
-        public string? CategoryName { get; set; }
         public IncomeType Type { get; set; }
-        public string? TypeName { get; set; }
+        public string Frequency { get; set; } = "ONETIME";
+        public DateOnly? DateReceived { get; set; }
         public decimal Amount { get; set; }
         public bool Status { get; set; }
         public DateTime CreatedOn { get; set; }
