@@ -2,9 +2,11 @@ using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FamLedger.Api.Controllers
 {
+    [Authorize]
     [Route("api/users")]
     [ApiController]
     public class UsersController : ControllerBase

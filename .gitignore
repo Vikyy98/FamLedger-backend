@@ -365,3 +365,6 @@ FodyWeavers.xsd
 appsettings.Development.json
 appsettings.Production.json
 appsettings.json
+
+.cursor
+.vscode

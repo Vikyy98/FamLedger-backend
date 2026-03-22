@@ -4,9 +4,11 @@ using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FamLedger.Api.Controllers
-{
+{   
+    [Authorize]
     [Route("api/families")]
     [ApiController]
     public class FamilyController : ControllerBase

@@ -6,9 +6,11 @@ using FamLedger.Domain.Entities;
 using FamLedger.Domain.Enums;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 
 namespace FamLedger.Api.Controllers
 {
+    [Authorize]
     [Route("api/income")]
     [ApiController]
     public class IncomeController : ControllerBase
