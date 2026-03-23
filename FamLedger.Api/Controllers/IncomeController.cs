@@ -30,7 +30,7 @@ namespace FamLedger.Api.Controllers
         {
             try
             {
-                var incomeDetails = await _incomeService.GetIncomeDetails(familyId);
+                var incomeDetails = await _incomeService.GetIncomeDetailsAsync(familyId);
                 return Ok(incomeDetails ?? new IncomeResponseDto());
             }
             catch (Exception ex)
@@ -97,12 +97,12 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-        [HttpGet("/api/families/{familyId}/incomes/{incomeId}")]
-        public async Task<IActionResult> GetIncomeById(int familyId, int incomeId)
+        [HttpGet("/api/families/{familyId}/incomes/{incomeId}/{type}")]
+        public async Task<IActionResult> GetIncomeById(int familyId, int incomeId, int type)
         {
             try
             {
-                var income = await _incomeService.GetIncomeByIdAsync(incomeId);
+                var income = await _incomeService.GetIncomeByIdAsync(incomeId, type);
                 if (income == null) return NotFound();
                 if (income.FamilyId != familyId) return NotFound();
                 return Ok(income);
