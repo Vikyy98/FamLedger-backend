@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -11,8 +11,6 @@ namespace FamLedger.Application.DTOs.Request
     {
         [Required]
         public string? FamilyName { get; set; }
-        [Required]
-        public int UserId { get; set; }
         public string? InvitationCode { get; set; }
         public string? InvitationLink { get; set; }
     }

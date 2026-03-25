@@ -1,10 +1,8 @@
-﻿using FamLedger.Application.Interfaces;
+using FamLedger.Application.Interfaces;
 using FamLedger.Domain.Entities;
 using FamLedger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using System.Runtime.Intrinsics.X86;
-
 namespace FamLedger.Infrastructure.Services
 {
     public class UserRepository : IUserRepository
@@ -26,6 +24,21 @@ namespace FamLedger.Infrastructure.Services
             {
                 var users = await _context.User.ToListAsync();
                 return users ?? new List<User>();
+            }
+            catch (Exception)
+            {
+                throw;
+            }
+        }
+
+        public async Task<User?> GetUserByEmailAsync(string email)
+        {
+            try
+            {
+                var normalized = email.Trim();
+                return await _context.User
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(u => u.Email.ToLower() == normalized.ToLower());
             }
             catch (Exception)
             {

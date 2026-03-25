@@ -13,7 +13,7 @@ namespace FamLedger.Domain.Entities
         public DateOnly IncomeDate { get; set; }
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
-        public User User { get; set; }
-        public Family Family { get; set; }
+        public User?  User { get; set; }
+        public Family? Family { get; set; }
     }
 }

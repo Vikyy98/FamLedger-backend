@@ -1,7 +1,8 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
+using FamLedger.Domain.Entities;
 using FamLedger.Domain.Enums;
 using Microsoft.Extensions.Logging;
 using System;
@@ -29,72 +30,77 @@ namespace FamLedger.Application.Services
         }
 
 
-        public async Task<IncomeResponseDto> GetIncomeDetails(int familyId)
+        public async Task<IncomeResponseDto> GetIncomeDetailsAsync(int familyId)
         {
             try
             {
-                // Fetch Income Details
+                // Fetch one-time and recurring incomes for this family.
                 var incomeDetails = await _incomeRepository.GetIncomeDetailsAsync(familyId);
-                if (incomeDetails == null || incomeDetails.Count == 0)
+                var recurringIncomeDetails = await _incomeRepository.GetRecurringIncomeDetailsAsync(familyId);
+                if (incomeDetails.Count == 0 && recurringIncomeDetails.Count == 0)
                 {
                     return new IncomeResponseDto { FamilyId = familyId };
                 }
 
                 DateTime currentUtc = DateTime.UtcNow;
-                // Current Month Start (Nov 1, 2025 00:00:00)
-                DateTime currentMonthStart = new DateTime(currentUtc.Year, currentUtc.Month, 1);
-                // Last Month Start (Oct 1, 2025 00:00:00)
-                DateTime lastMonthStart = currentMonthStart.AddMonths(-1);
+                DateOnly currentMonthStart = new DateOnly(currentUtc.Year, currentUtc.Month, 1);
+                DateOnly currentMonthEnd = currentMonthStart.AddMonths(1).AddDays(-1);
+                DateOnly lastMonthStart = currentMonthStart.AddMonths(-1);
+                DateOnly lastMonthEnd = currentMonthStart.AddDays(-1);
 
-                // Income created before the start of the next month is considered active now.
-                var activeRecurringIncome = incomeDetails.Where(i => i.Status).ToList();
+                // One-time incomes are counted by income date inside month windows.
+                var currentMonthIncome = incomeDetails.Where(i =>
+                    i.Status &&
+                    i.IncomeDate >= currentMonthStart &&
+                    i.IncomeDate <= currentMonthEnd).ToList();
 
-                // ONE-TIME Income (Current Month)
-                var oneTimeCurrentMonth = incomeDetails
-                    .Where(i =>
-                        i.Status &&
-                        i.CreatedOn.Date >= currentMonthStart.Date
-                    )
-                    .ToList();
+                var lastMonthIncome = incomeDetails.Where(i =>
+                    i.Status &&
+                    i.IncomeDate >= lastMonthStart &&
+                    i.IncomeDate <= lastMonthEnd).ToList();
 
-                // ONE-TIME Income (Last Month)
-                var oneTimeLastMonth = incomeDetails
-                    .Where(i =>
-                        i.Status &&
-                        i.CreatedOn.Date >= lastMonthStart.Date &&
-                        i.CreatedOn.Date < currentMonthStart.Date
-                    )
-                    .ToList();
+                // Recurring incomes are counted if the recurrence is due in the target month.
+                var currentMonthRecurringIncome = recurringIncomeDetails.Where(i =>
+                    IsRecurringIncomeActiveInMonth(i, currentMonthStart, currentMonthEnd)).ToList();
 
-                var recurringOfLastMonth = activeRecurringIncome.Where(i => i.CreatedOn.Date < currentMonthStart).ToList();
+                var lastMonthRecurringIncome = recurringIncomeDetails.Where(i =>
+                    IsRecurringIncomeActiveInMonth(i, lastMonthStart, lastMonthEnd)).ToList();
 
-                // Recurring Income Total
-                decimal totalRecurring = activeRecurringIncome.Sum(i => i.Amount);
-                decimal totalRecurringOfLastMonth = recurringOfLastMonth.Sum(i => i.Amount);
-                // CURRENT MONTH Total
-                decimal totalIncomeOfCurrentMonth = totalRecurring + oneTimeCurrentMonth.Sum(i => i.Amount);
-                // LAST MONTH Total
-                decimal totalIncomeOfLastMonth = totalRecurringOfLastMonth + oneTimeLastMonth.Sum(i => i.Amount);
+                var totalCurrentMonthIncome = currentMonthIncome.Sum(i => i.Amount);
+                var totalLastMonthIncome = lastMonthIncome.Sum(i => i.Amount);
+                var totalCurrentMonthRecurringIncome = currentMonthRecurringIncome.Sum(i => i.Amount);
+                var totalLastMonthRecurringIncome = lastMonthRecurringIncome.Sum(i => i.Amount);
+
+                decimal totalCurrentMonth = totalCurrentMonthRecurringIncome + totalCurrentMonthIncome;
+                decimal totalLastMonth = totalLastMonthRecurringIncome + totalLastMonthIncome;
+
 
                 decimal percentageDifference = 0;
-                if (totalIncomeOfLastMonth != 0)
+                if (totalLastMonth != 0)
                 {
                     // Calculation: ((Current - Last) / Last) * 100
-                    percentageDifference = ((decimal)totalIncomeOfCurrentMonth - totalIncomeOfLastMonth) / totalIncomeOfLastMonth * 100;
+                    percentageDifference = (totalCurrentMonth - totalLastMonth) / totalLastMonth * 100;
                 }
-                else if (totalIncomeOfCurrentMonth > 0)
+                else if (totalCurrentMonth > 0)
                 {
                     percentageDifference = 100.00m;
                 }
+
+                var incomeItems = _mapper.Map<List<IncomeItemDto>>(incomeDetails);
+                incomeItems.AddRange(_mapper.Map<List<IncomeItemDto>>(recurringIncomeDetails));
+                incomeItems = incomeItems
+                    .OrderByDescending(i => i.DateReceived)
+                    .ThenByDescending(i => i.CreatedOn)
+                    .ToList();
 
                 System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-IN");
                 var incomeReponse = new IncomeResponseDto
                 {
                     FamilyId = familyId,
-                    TotalIncome = totalIncomeOfCurrentMonth.ToString("C", culture),
-                    TotalRecurringIncome = totalRecurring.ToString("C", culture),
-                    Incomes = _mapper.Map<List<IncomeItemDto>>(incomeDetails),
-                    RecurringIncomeCount = activeRecurringIncome.Count,
+                    TotalIncome = totalCurrentMonth.ToString("C", culture),
+                    TotalRecurringIncome = totalCurrentMonthRecurringIncome.ToString("C", culture),
+                    Incomes = incomeItems,
+                    RecurringIncomeCount = recurringIncomeDetails.Count(i => i.Status && i.StartDate <= currentMonthEnd),
                     PercentageDifference = percentageDifference.ToString("N2")
                 };
 
@@ -107,11 +113,11 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<(IncomeItemDto? incomeItemDto, bool IsDuplicate)> AddIncomeAsync(IncomeRequestDto income)
+        public async Task<AddIncomeResult> AddIncomeAsync(IncomeRequestDto income)
         {
             try
             {
-                if (income == null) return (null, false);
+                if (income == null) return AddIncomeResult.InvalidRequest();
                 if (income.Type == IncomeType.Recurring)
                 {
                     // Ensure frequency default
@@ -121,19 +127,19 @@ namespace FamLedger.Application.Services
                     bool isDuplicate = await _incomeRepository.IsDuplicateIncomeAsync(income);
                     if (isDuplicate)
                     {
-                        return (null, true);
+                        return AddIncomeResult.Duplicate();
                     }
 
                     var recurringEntity = _mapper.Map<Domain.Entities.RecurringIncome>(income);
-                    var createdRecurring = await _incomeRepository.AddRecurringIncomeasync(recurringEntity);
-                    if (createdRecurring == null) return (null, false);
+                    var createdRecurring = await _incomeRepository.AddRecurringIncomeAsync(recurringEntity);
+                    if (createdRecurring == null) return AddIncomeResult.PersistenceFailed();
 
                     // Map RecurringIncome to IncomeItemDto (mapper must support it)
                     var dto = _mapper.Map<IncomeItemDto>(createdRecurring);
                     // RecurringIncome uses Id as primary key
                     dto.Id = createdRecurring.Id;
                     dto.CreatedOn = createdRecurring.CreatedOn;
-                    return (dto, false);
+                    return AddIncomeResult.Success(dto);
                 }
                 else
                 {
@@ -141,40 +147,88 @@ namespace FamLedger.Application.Services
                     bool isDuplicate = await _incomeRepository.IsDuplicateIncomeAsync(income);
                     if (isDuplicate)
                     {
-                        return (null, true);
+                        return AddIncomeResult.Duplicate();
                     }
 
                     var incomeEntity = _mapper.Map<Domain.Entities.Income>(income);
                     var created = await _incomeRepository.AddIncomeAsync(incomeEntity);
-                    if (created == null) return (null, false);
+                    if (created == null) return AddIncomeResult.PersistenceFailed();
 
                     var dto = _mapper.Map<IncomeItemDto>(created);
                     // Ensure Id mapping (Income.IncomeId)
                     dto.Id = created.Id;
                     dto.CreatedOn = created.CreatedOn;
-                    return (dto, false);
+                    return AddIncomeResult.Success(dto);
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in AddIncomeAsync method for Family ID: {FamilyId}", income?.FamilyId);
-                return (null, false);
+                return AddIncomeResult.PersistenceFailed();
             }
         }
 
-        public async Task<IncomeItemDto?> GetIncomeByIdAsync(int incomeId)
+        public async Task<GetIncomeByIdResult> GetIncomeByIdAsync(int incomeId, int type, int familyId)
         {
             try
             {
-                var income = await _incomeRepository.GetIncomeByIdAsync(incomeId);
-                if (income == null) return null;
-                return _mapper.Map<IncomeItemDto>(income);
+                IncomeItemDto? dto;
+                if (type == (int)IncomeType.Recurring)
+                {
+                    var recurringIncome = await _incomeRepository.GetRecurringIncomeByIdAsync(incomeId);
+                    if (recurringIncome == null) return GetIncomeByIdResult.NotFound();
+                    dto = _mapper.Map<IncomeItemDto>(recurringIncome);
+                }
+                else
+                {
+                    var income = await _incomeRepository.GetIncomeByIdAsync(incomeId);
+                    if (income == null) return GetIncomeByIdResult.NotFound();
+                    dto = _mapper.Map<IncomeItemDto>(income);
+                }
+
+                if (dto.FamilyId != familyId)
+                {
+                    return GetIncomeByIdResult.WrongFamily();
+                }
+
+                return GetIncomeByIdResult.Success(dto);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in GetIncomeByIdAsync for Income ID: {IncomeId}", incomeId);
-                return null;
+                return GetIncomeByIdResult.NotFound();
             }
+        }
+
+        private static bool IsRecurringIncomeActiveInMonth(
+            RecurringIncome recurringIncome,
+            DateOnly monthStart,
+            DateOnly monthEnd)
+        {
+            if (!recurringIncome.Status || recurringIncome.StartDate > monthEnd)
+            {
+                return false;
+            }
+
+            int monthsDifference =
+                (monthStart.Year - recurringIncome.StartDate.Year) * 12 +
+                (monthStart.Month - recurringIncome.StartDate.Month);
+
+            if (monthsDifference < 0)
+            {
+                return false;
+            }
+
+            var frequency = (recurringIncome.Frequency ?? "MONTHLY").Trim().ToUpperInvariant();
+
+            return frequency switch
+            {
+                "MONTHLY" => true,
+                "QUARTERLY" => monthsDifference % 3 == 0,
+                "YEARLY" => monthsDifference % 12 == 0,
+                "ONETIME" => recurringIncome.StartDate >= monthStart && recurringIncome.StartDate <= monthEnd,
+                _ => false,
+            };
         }
     }
 }

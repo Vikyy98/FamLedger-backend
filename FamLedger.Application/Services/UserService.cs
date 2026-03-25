@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FamLedger.Application.Interfaces;
 using FamLedger.Domain.Entities;
 using System;
@@ -48,36 +48,82 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<RegisterUserResponse> RegisterUserAsync(RegisterUserRequest userRequest)
+        public async Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest? userRequest)
         {
             try
             {
-                if (userRequest == null) { new RegisterUserResponse(); }
+                if (userRequest == null
+                    || string.IsNullOrWhiteSpace(userRequest.FullName)
+                    || string.IsNullOrWhiteSpace(userRequest.Email)
+                    || string.IsNullOrWhiteSpace(userRequest.Password))
+                {
+                    return RegisterUserResult.InvalidRequest();
+                }
 
-                //Add Hashed password
+                if (await _userRepository.GetUserByEmailAsync(userRequest.Email) != null)
+                {
+                    return RegisterUserResult.EmailAlreadyExists();
+                }
+
                 var user = _mapper.Map<User>(userRequest);
                 var hashedPassowrd = new PasswordHasher<User>().HashPassword(user, userRequest.Password);
                 user.PasswordHash = hashedPassowrd;
 
-                if (user != null)
+                bool registerUser = await _userRepository.RegisterUserAsync(user);
+                if (!registerUser)
                 {
-                    bool registerUser = await _userRepository.RegisterUserAsync(user);
-                    if (registerUser)
-                    {
-                        var userResponse = _mapper.Map<RegisterUserResponse>(user);
-                        if (userResponse != null)
-                        {
-                            return userResponse;
-                        }
-                    }
+                    return RegisterUserResult.Failed();
                 }
 
-                return new RegisterUserResponse();
+                var userResponse = _mapper.Map<RegisterUserResponse>(user);
+                return RegisterUserResult.Success(userResponse);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in RegisterUserAsync method");
-                return new RegisterUserResponse();
+                return RegisterUserResult.Failed();
+            }
+        }
+
+        public async Task<LoginResult> LoginAsync(UserLoginRequest? request)
+        {
+            if (request == null
+                || string.IsNullOrWhiteSpace(request.Email)
+                || string.IsNullOrWhiteSpace(request.Password))
+            {
+                return LoginResult.MissingInput();
+            }
+
+            try
+            {
+                var user = await _userRepository.GetUserByEmailAsync(request.Email);
+                if (user == null)
+                {
+                    return LoginResult.UserNotFound();
+                }
+
+                var verify = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password);
+                if (verify == PasswordVerificationResult.Failed)
+                {
+                    return LoginResult.InvalidPassword();
+                }
+
+                var userDto = _mapper.Map<UserReponseDto>(user);
+                var userResponse = _mapper.Map<UserLoginResponse>(userDto);
+
+                var jwtToken = CreateToken(userDto);
+                if (string.IsNullOrWhiteSpace(jwtToken))
+                {
+                    return LoginResult.TokenFailed();
+                }
+
+                userResponse.token = jwtToken;
+                return LoginResult.Success(userResponse);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in LoginAsync method");
+                return LoginResult.TokenFailed();
             }
         }
 
@@ -94,6 +140,7 @@ namespace FamLedger.Application.Services
                 var claims = new[]
                 {
                 new Claim(JwtRegisteredClaimNames.Sub,userDetails.Id.ToString()),
+                new Claim(ClaimTypes.NameIdentifier, userDetails.Id.ToString()),
                 new Claim(JwtRegisteredClaimNames.Email,userDetails.Email),
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, userDetails.FullName),
@@ -105,7 +152,7 @@ namespace FamLedger.Application.Services
                     issuer: jwtKey["Issuer"],
                     audience: jwtKey["Audience"],
                     claims: claims,
-                    expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtKey["ExpireTime"])),
+                    expires: DateTime.UtcNow.AddMinutes(Convert.ToDouble(jwtKey["ExpireMinutes"])),
                     signingCredentials: cred
                     );
 

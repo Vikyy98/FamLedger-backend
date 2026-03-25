@@ -1,4 +1,4 @@
-﻿using AutoMapper;
+using AutoMapper;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
@@ -31,15 +31,19 @@ namespace FamLedger.Application.Services
             _options = options.Value;
         }
 
-        public async Task<FamilyResponse?> CreateFamilyAsync(int userId, string familyName)
+        public async Task<FamilyCreateResult> CreateFamilyAsync(int userId, string familyName)
         {
             try
             {
-                //Check the user exisit:
                 var user = await _userRepository.GetUserByIdAsync(userId);
                 if (user == null)
                 {
-                    return null;
+                    return FamilyCreateResult.UserNotFound();
+                }
+
+                if (user.FamilyId is int existingFamilyId && existingFamilyId > 0)
+                {
+                    return FamilyCreateResult.UserAlreadyInFamily();
                 }
 
                 // 1. Get last family to generate code
@@ -66,13 +70,13 @@ namespace FamLedger.Application.Services
                 //Update user details
                 await _userRepository.UpdateFamilyDetailAsync(userId, family.Id);
 
-                return new FamilyResponse
+                return FamilyCreateResult.Success(new FamilyResponse
                 {
                     FamilyId = family.Id,
                     FamilyCode = newFamilyCode,
                     InvitationCode = invitationCode,
                     InvitationLink = $"{_options.RootUrl}/invite?code={invitationCode}"
-                };
+                });
             }
             catch (Exception ex)
             {
@@ -81,20 +85,34 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<FamilyResponse?> GetFamilyByIdAsync(int familyId)
+        public async Task<FamilyGetResult> GetFamilyByIdAsync(int familyId, int requesterUserId)
         {
             try
             {
                 var family = await _familyRepository.GetFamilyByIdAsync(familyId);
-                if (family == null) return null;
+                if (family == null)
+                {
+                    return FamilyGetResult.NotFound();
+                }
 
-                return new FamilyResponse
+                var requester = await _userRepository.GetUserByIdAsync(requesterUserId);
+                if (requester == null)
+                {
+                    return FamilyGetResult.Forbidden();
+                }
+
+                if (requester.FamilyId != familyId)
+                {
+                    return FamilyGetResult.Forbidden();
+                }
+
+                return FamilyGetResult.Ok(new FamilyResponse
                 {
                     FamilyId = family.Id,
                     FamilyCode = family.FamilyCode,
                     InvitationCode = family.InvitationCode,
                     InvitationLink = $"{_options.RootUrl}/invite?code={family.InvitationCode}"
-                };
+                });
             }
             catch (Exception ex)
             {

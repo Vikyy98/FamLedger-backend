@@ -16,11 +16,11 @@ namespace FamLedger.Domain.Entities
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
         public int CreatedBy { get; set; }
-        public ICollection<User> Users { get; set; }
-        public ICollection<Income> Incomes { get; set; }
-        public ICollection<RecurringIncome> RecurringIncomes { get; set; }
-        public ICollection<Expense> Expenses { get; set; }
-        public ICollection<Asset> Assets { get; set; }
+        public ICollection<User>? Users { get; set; }
+        public ICollection<Income>? Incomes { get; set; }
+        public ICollection<RecurringIncome>? RecurringIncomes { get; set; }
+        public ICollection<Expense>? Expenses { get; set; }
+        public ICollection<Asset>? Assets { get; set; }
 
     }
 }

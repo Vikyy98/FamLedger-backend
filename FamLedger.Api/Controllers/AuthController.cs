@@ -1,9 +1,6 @@
-﻿using AutoMapper;
 using FamLedger.Application.Interfaces;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
-using FamLedger.Domain.Entities;
-using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FamLedger.Api.Controllers
@@ -12,62 +9,36 @@ namespace FamLedger.Api.Controllers
     [ApiController]
     public class AuthController : ControllerBase
     {
-
         private readonly ILogger<AuthController> _logger;
-        private readonly IMapper _mapper;
         private readonly IUserService _userService;
 
-        public AuthController(ILogger<AuthController> logger, IMapper mapper, IUserService userService)
+        public AuthController(ILogger<AuthController> logger, IUserService userService)
         {
             _logger = logger;
-            _mapper = mapper;
             _userService = userService;
         }
-
-
 
         [HttpPost("token")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest user)
         {
             try
             {
-                if (user == null || string.IsNullOrWhiteSpace(user.Email) || string.IsNullOrWhiteSpace(user.Password))
+                var outcome = await _userService.LoginAsync(user);
+                return outcome.Status switch
                 {
-                    return BadRequest("User data is null");
-                }
-
-                //Get all Users
-                var users = await _userService.GetUserAsync();
-
-                //Check if user is found
-                var userDetails = users.FirstOrDefault(u => string.Equals(u.Email, user.Email));
-                if (userDetails == null)
-                {
-                    return NotFound("User not found");
-                }
-
-                //Verify password
-                var passwordVerification = new PasswordHasher<UserReponseDto>().VerifyHashedPassword(userDetails, userDetails.PasswordHash, user.Password);
-                if (passwordVerification == PasswordVerificationResult.Failed)
-                {
-                    return Unauthorized("Invalid password");
-                }
-
-                var userResponse = _mapper.Map<UserLoginResponse>(userDetails);
-                var jwtToken = _userService.CreateToken(userDetails);
-                if (string.IsNullOrWhiteSpace(jwtToken) || userResponse == null) { return BadRequest("Failed to login, Try again later"); }
-                userResponse.token = jwtToken;
-
-                //return token and user response
-                return Ok(new { user = userResponse });
+                    LoginStatus.Ok when outcome.User != null => Ok(new { user = outcome.User }),
+                    LoginStatus.MissingInput => BadRequest("User data is null"),
+                    LoginStatus.UserNotFound => NotFound("User not found"),
+                    LoginStatus.InvalidPassword => Unauthorized("Invalid password"),
+                    LoginStatus.TokenFailed => BadRequest("Failed to login, Try again later"),
+                    _ => BadRequest("Failed to login, Try again later"),
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in Login method");
-                return BadRequest(ex);
+                return StatusCode(500, new { message = "An internal error occurred" });
             }
         }
-
-
     }
 }

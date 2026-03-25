@@ -22,7 +22,7 @@ namespace FamLedger.Domain.Entities
 
         public DateTime? PurchaseDate { get; set; }
 
-        public string? Remakrs { get; set; }
+        public string? Remarks { get; set; }
 
         public bool Status { get; set; } = true;
 
@@ -30,7 +30,7 @@ namespace FamLedger.Domain.Entities
 
         public DateTime UpdatedOn { get; set; }
 
-        public User User { get; set; }
-        public Family Family { get; set; }
+        public User? User { get; set; }
+        public Family? Family { get; set; }
     }
 }

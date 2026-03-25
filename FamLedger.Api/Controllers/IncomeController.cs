@@ -1,4 +1,4 @@
-﻿using FamLedger.Application.DTOs.Request;
+using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using FamLedger.Application.Utilities;
@@ -78,17 +78,16 @@ namespace FamLedger.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var (incomeResponse, isDuplicate) = await _incomeService.AddIncomeAsync(incomeRequest);
-                if (isDuplicate)
+                var outcome = await _incomeService.AddIncomeAsync(incomeRequest);
+                return outcome.Status switch
                 {
-                    return Conflict("Duplicate income entry detected");
-                }
-                if (incomeResponse == null)
-                {
-                    return StatusCode(500, "Failed to add income");
-                }
-
-                return CreatedAtAction(nameof(GetIncomeById), new { familyId = incomeResponse.FamilyId, incomeId = incomeResponse.Id }, incomeResponse);
+                    AddIncomeStatus.Ok when outcome.Response != null =>
+                        CreatedAtAction(nameof(GetIncomeById), new { familyId = outcome.Response.FamilyId, incomeId = outcome.Response.Id }, outcome.Response),
+                    AddIncomeStatus.Duplicate => Conflict("Duplicate income entry detected"),
+                    AddIncomeStatus.InvalidRequest => BadRequest("Invalid income data"),
+                    AddIncomeStatus.PersistenceFailed => StatusCode(500, "Failed to add income"),
+                    _ => StatusCode(500, "Failed to add income"),
+                };
             }
             catch (Exception ex)
             {
@@ -102,10 +101,14 @@ namespace FamLedger.Api.Controllers
         {
             try
             {
-                var income = await _incomeService.GetIncomeByIdAsync(incomeId, type);
-                if (income == null) return NotFound();
-                if (income.FamilyId != familyId) return NotFound();
-                return Ok(income);
+                var outcome = await _incomeService.GetIncomeByIdAsync(incomeId, type, familyId);
+                return outcome.Status switch
+                {
+                    GetIncomeByIdStatus.Ok when outcome.Response != null => Ok(outcome.Response),
+                    GetIncomeByIdStatus.NotFound => NotFound(),
+                    GetIncomeByIdStatus.WrongFamily => Forbid(),
+                    _ => NotFound(),
+                };
             }
             catch (Exception ex)
             {

@@ -1,15 +1,10 @@
-﻿using FamLedger.Application.DTOs.Response;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using FamLedger.Application.DTOs.Response;
 
 namespace FamLedger.Application.Interfaces
 {
     public interface IFamilyService
     {
-        Task<FamilyResponse> CreateFamilyAsync(int userId, string familyName);
-        Task<FamilyResponse?> GetFamilyByIdAsync(int familyId);
+        Task<FamilyCreateResult> CreateFamilyAsync(int userId, string familyName);
+        Task<FamilyGetResult> GetFamilyByIdAsync(int familyId, int requesterUserId);
     }
 }

@@ -38,6 +38,25 @@ namespace FamLedger.Infrastructure.Services
             }
         }
 
+        public async Task<List<RecurringIncome>> GetRecurringIncomeDetailsAsync(int familyId)
+        {
+            try
+            {
+                var recurringIncomes = await _context.RecurringIncome.Where(i => i.FamilyId == familyId).ToListAsync();
+                if (recurringIncomes == null || recurringIncomes.Count == 0)
+                {
+                    _logger.LogWarning("No recurring income records found for FamilyId: {FamilyId}", familyId);
+                }
+
+                return recurringIncomes ?? new List<RecurringIncome>();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "An error occurred while retrieving recurring income for FamilyId: {FamilyId}", familyId);
+                return new List<RecurringIncome>();
+            }
+        }
+
         public async Task<Income> AddIncomeAsync(Income income)
         {
             income.CreatedOn = DateTime.UtcNow;
@@ -48,7 +67,7 @@ namespace FamLedger.Infrastructure.Services
             return income;
         }
 
-        public async Task<RecurringIncome> AddRecurringIncomeasync(RecurringIncome recurringIncome)
+        public async Task<RecurringIncome> AddRecurringIncomeAsync(RecurringIncome recurringIncome)
         {
             recurringIncome.CreatedOn = DateTime.UtcNow;
             recurringIncome.UpdatedOn = DateTime.UtcNow;
@@ -101,6 +120,19 @@ namespace FamLedger.Infrastructure.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error fetching income by id {IncomeId}", incomeId);
+                return null;
+            }
+        }
+
+        public async Task<RecurringIncome?> GetRecurringIncomeByIdAsync(int recurringIncomeId)
+        {
+            try
+            {
+                return await _context.RecurringIncome.FirstOrDefaultAsync(i => i.Id == recurringIncomeId && i.Status == true);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error fetching recurring income by id {RecurringIncomeId}", recurringIncomeId);   
                 return null;
             }
         }

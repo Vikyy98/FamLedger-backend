@@ -11,9 +11,11 @@ namespace FamLedger.Application.Interfaces
     public interface IIncomeRepository
     {
         Task<List<Income>> GetIncomeDetailsAsync(int familyId);
-        Task<RecurringIncome> AddRecurringIncomeasync(RecurringIncome recurringIncome);
+        Task<List<RecurringIncome>> GetRecurringIncomeDetailsAsync(int familyId);
+        Task<RecurringIncome> AddRecurringIncomeAsync(RecurringIncome recurringIncome);
         Task<Income> AddIncomeAsync(Income income);
         Task<Income?> GetIncomeByIdAsync(int incomeId);
+        Task<RecurringIncome?> GetRecurringIncomeByIdAsync(int recurringIncomeId);
         Task<bool> IsDuplicateIncomeAsync(IncomeRequestDto income);
     }
 }

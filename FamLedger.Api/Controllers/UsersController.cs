@@ -25,22 +25,16 @@ namespace FamLedger.Api.Controllers
         {
             try
             {
-                if (request == null || string.IsNullOrWhiteSpace(request.FullName) || string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Password))
+                var outcome = await _userService.RegisterUserAsync(request);
+                return outcome.Status switch
                 {
-                    return BadRequest("User data is missing");
-                }
-
-                var users = await _userService.GetUserAsync();
-                var isEmailExist = users.Any(u => string.Equals(u.Email, request.Email));
-                if (isEmailExist)
-                {
-                    return Conflict("Email already exists");
-                }
-
-                var response = await _userService.RegisterUserAsync(request);
-                if (response == null) return BadRequest("Register User Failed");
-
-                return Created($"/api/users/{response.Id}", response);
+                    RegisterUserStatus.Ok when outcome.Response != null =>
+                        Created($"/api/users/{outcome.Response.Id}", outcome.Response),
+                    RegisterUserStatus.InvalidRequest => BadRequest("User data is missing"),
+                    RegisterUserStatus.EmailAlreadyExists => Conflict("Email already exists"),
+                    RegisterUserStatus.Failed => BadRequest("Register User Failed"),
+                    _ => BadRequest("Register User Failed"),
+                };
             }
             catch (Exception ex)
             {

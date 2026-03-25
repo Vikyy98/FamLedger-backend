@@ -1,13 +1,13 @@
-﻿using AutoMapper;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 
 namespace FamLedger.Api.Controllers
-{   
+{
     [Authorize]
     [Route("api/families")]
     [ApiController]
@@ -31,15 +31,25 @@ namespace FamLedger.Api.Controllers
                 {
                     return BadRequest("Request is invalid");
                 }
-
-                var familyResponse = await _familyService.CreateFamilyAsync(familyRequest.UserId, familyRequest.FamilyName);
-                if (familyResponse == null)
+                if (familyRequest == null || string.IsNullOrWhiteSpace(familyRequest.FamilyName))
                 {
-                    return NotFound("User not found");
+                    return BadRequest("Family name is required");
                 }
 
-                // Return 201 Created with Location header
-                return Created($"/api/families/{familyResponse.FamilyId}", familyResponse);
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid or missing user identity" });
+                }
+
+                var outcome = await _familyService.CreateFamilyAsync(userId, familyRequest.FamilyName!);
+                return outcome.Status switch
+                {
+                    FamilyCreateStatus.Ok when outcome.Response != null =>
+                        Created($"/api/families/{outcome.Response.FamilyId}", outcome.Response),
+                    FamilyCreateStatus.UserNotFound => NotFound(new { message = "User not found" }),
+                    FamilyCreateStatus.AlreadyInFamily => Conflict(new { message = "You already belong to a family" }),
+                    _ => StatusCode(500, new { message = "An internal error occurred" }),
+                };
             }
             catch (Exception ex)
             {
@@ -53,15 +63,35 @@ namespace FamLedger.Api.Controllers
         {
             try
             {
-                var family = await _familyService.GetFamilyByIdAsync(id);
-                if (family == null) return NotFound();
-                return Ok(family);
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid or missing user identity" });
+                }
+
+                var outcome = await _familyService.GetFamilyByIdAsync(id, userId);
+                return outcome.Status switch
+                {
+                    FamilyGetStatus.Ok when outcome.Response != null => Ok(outcome.Response),
+                    FamilyGetStatus.NotFound => NotFound(),
+                    FamilyGetStatus.Forbidden => Forbid(),
+                    _ => StatusCode(500),
+                };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred while fetching family");
                 return StatusCode(500, new { message = "An internal error occurred" });
             }
+        }
+
+        /// <summary>JWT may expose subject as ClaimTypes.NameIdentifier and/or <see cref="JwtRegisteredClaimNames.Sub"/>.</summary>
+        private bool TryGetCurrentUserId(out int userId)
+        {
+            var raw =
+                User.FindFirstValue(ClaimTypes.NameIdentifier)
+                ?? User.FindFirstValue(JwtRegisteredClaimNames.Sub);
+
+            return int.TryParse(raw, out userId) && userId > 0;
         }
     }
 }
