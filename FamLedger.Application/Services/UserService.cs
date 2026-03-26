@@ -145,6 +145,7 @@ namespace FamLedger.Application.Services
                 new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
                 new Claim(ClaimTypes.Name, userDetails.FullName),
                 new Claim(ClaimTypes.Role, userDetails.Role),
+                new Claim("familyId", userDetails.FamilyId?.ToString() ?? string.Empty),
             };
 
 

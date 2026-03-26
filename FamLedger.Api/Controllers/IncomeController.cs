@@ -2,9 +2,7 @@ using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using FamLedger.Application.Utilities;
-using FamLedger.Domain.Entities;
 using FamLedger.Domain.Enums;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 
@@ -19,7 +17,9 @@ namespace FamLedger.Api.Controllers
         private readonly IIncomeService _incomeService;
         private readonly ILogger<IncomeController> _logger;
 
-        public IncomeController(IIncomeService incomeService, ILogger<IncomeController> logger)
+        public IncomeController(
+            IIncomeService incomeService,
+            ILogger<IncomeController> logger)
         {
             _incomeService = incomeService;
             _logger = logger;
@@ -85,6 +85,7 @@ namespace FamLedger.Api.Controllers
                         CreatedAtAction(nameof(GetIncomeById), new { familyId = outcome.Response.FamilyId, incomeId = outcome.Response.Id }, outcome.Response),
                     AddIncomeStatus.Duplicate => Conflict("Duplicate income entry detected"),
                     AddIncomeStatus.InvalidRequest => BadRequest("Invalid income data"),
+                    AddIncomeStatus.Forbidden => Forbid(),
                     AddIncomeStatus.PersistenceFailed => StatusCode(500, "Failed to add income"),
                     _ => StatusCode(500, "Failed to add income"),
                 };
@@ -106,7 +107,7 @@ namespace FamLedger.Api.Controllers
                 {
                     GetIncomeByIdStatus.Ok when outcome.Response != null => Ok(outcome.Response),
                     GetIncomeByIdStatus.NotFound => NotFound(),
-                    GetIncomeByIdStatus.WrongFamily => Forbid(),
+                    GetIncomeByIdStatus.Forbidden => Forbid(),
                     _ => NotFound(),
                 };
             }
@@ -117,8 +118,6 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-
-        //Get income details by family id
 
         //Get income details of family by year
 

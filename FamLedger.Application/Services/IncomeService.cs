@@ -16,15 +16,18 @@ namespace FamLedger.Application.Services
     public class IncomeService : IIncomeService
     {
         private readonly IIncomeRepository _incomeRepository;
+        private readonly IUserContext _userContext;
         private readonly ILogger<IncomeService> _logger;
         private readonly IMapper _mapper;
         public IncomeService(
             IIncomeRepository incomeRepository,
+            IUserContext userContext,
             ILogger<IncomeService> logger,
             IMapper mapper
             )
         {
             _incomeRepository = incomeRepository;
+            _userContext = userContext;
             _logger = logger;
             _mapper = mapper;
         }
@@ -34,6 +37,12 @@ namespace FamLedger.Application.Services
         {
             try
             {
+                var currentUser = _userContext.GetUserContextFromClaims();
+                if (!HasFamilyAccess(familyId, currentUser))
+                {
+                    return new IncomeResponseDto { FamilyId = familyId };
+                }
+
                 // Fetch one-time and recurring incomes for this family.
                 var incomeDetails = await _incomeRepository.GetIncomeDetailsAsync(familyId);
                 var recurringIncomeDetails = await _incomeRepository.GetRecurringIncomeDetailsAsync(familyId);
@@ -118,6 +127,27 @@ namespace FamLedger.Application.Services
             try
             {
                 if (income == null) return AddIncomeResult.InvalidRequest();
+
+                var currentUser = _userContext.GetUserContextFromClaims();
+                if (!currentUser.IsAuthenticated || !currentUser.UserId.HasValue)
+                {
+                    return AddIncomeResult.Forbidden();
+                }
+
+                // Use trusted JWT claims instead of client-supplied identity values.
+                income.UserId = currentUser.UserId.Value;
+                income.FamilyId = currentUser.FamilyId ?? 0;
+
+                if (!HasFamilyAccess(income.FamilyId, currentUser))
+                {
+                    return AddIncomeResult.Forbidden();
+                }
+
+                if (!CanCreateIncomeForUser(income.UserId, currentUser))
+                {
+                    return AddIncomeResult.Forbidden();
+                }
+
                 if (income.Type == IncomeType.Recurring)
                 {
                     // Ensure frequency default
@@ -172,6 +202,12 @@ namespace FamLedger.Application.Services
         {
             try
             {
+                var currentUser = _userContext.GetUserContextFromClaims();
+                if (!HasFamilyAccess(familyId, currentUser))
+                {
+                    return GetIncomeByIdResult.Forbidden();
+                }
+
                 IncomeItemDto? dto;
                 if (type == (int)IncomeType.Recurring)
                 {
@@ -188,7 +224,7 @@ namespace FamLedger.Application.Services
 
                 if (dto.FamilyId != familyId)
                 {
-                    return GetIncomeByIdResult.WrongFamily();
+                    return GetIncomeByIdResult.Forbidden();
                 }
 
                 return GetIncomeByIdResult.Success(dto);
@@ -229,6 +265,35 @@ namespace FamLedger.Application.Services
                 "ONETIME" => recurringIncome.StartDate >= monthStart && recurringIncome.StartDate <= monthEnd,
                 _ => false,
             };
+        }
+
+        private static bool HasFamilyAccess(int requestedFamilyId, UserContextDto currentUser)
+        {
+            return currentUser.IsAuthenticated
+                && currentUser.FamilyId.HasValue
+                && requestedFamilyId > 0
+                && currentUser.FamilyId.Value == requestedFamilyId;
+        }
+
+        private static bool CanCreateIncomeForUser(int requestUserId, UserContextDto currentUser)
+        {
+            if (!currentUser.UserId.HasValue)
+            {
+                return false;
+            }
+
+            // Admin can add for any member in the same family.
+            if (IsAdmin(currentUser.Role))
+            {
+                return true;
+            }
+
+            return requestUserId == currentUser.UserId.Value;
+        }
+
+        private static bool IsAdmin(string role)
+        {
+            return string.Equals(role, "ADMIN", StringComparison.OrdinalIgnoreCase);
         }
     }
 }

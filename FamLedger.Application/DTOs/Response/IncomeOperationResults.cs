@@ -5,6 +5,7 @@ namespace FamLedger.Application.DTOs.Response
         Ok,
         InvalidRequest,
         Duplicate,
+        Forbidden,
         PersistenceFailed,
     }
 
@@ -22,6 +23,9 @@ namespace FamLedger.Application.DTOs.Response
         public static AddIncomeResult Duplicate() =>
             new() { Status = AddIncomeStatus.Duplicate };
 
+        public static AddIncomeResult Forbidden() =>
+            new() { Status = AddIncomeStatus.Forbidden };
+
         public static AddIncomeResult PersistenceFailed() =>
             new() { Status = AddIncomeStatus.PersistenceFailed };
     }
@@ -30,7 +34,7 @@ namespace FamLedger.Application.DTOs.Response
     {
         Ok,
         NotFound,
-        WrongFamily,
+        Forbidden,
     }
 
     public sealed class GetIncomeByIdResult
@@ -44,7 +48,7 @@ namespace FamLedger.Application.DTOs.Response
         public static GetIncomeByIdResult NotFound() =>
             new() { Status = GetIncomeByIdStatus.NotFound };
 
-        public static GetIncomeByIdResult WrongFamily() =>
-            new() { Status = GetIncomeByIdStatus.WrongFamily };
+        public static GetIncomeByIdResult Forbidden() =>
+            new() { Status = GetIncomeByIdStatus.Forbidden };
     }
 }

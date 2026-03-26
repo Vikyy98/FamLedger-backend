@@ -52,6 +52,8 @@ builder.Services.AddCors(options =>
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.AddScoped<IUserRepository, UserRepository>();
+builder.Services.AddHttpContextAccessor();
+builder.Services.AddScoped<IUserContext, UserContextService>();
 
 builder.Services.AddScoped<IIncomeService, IncomeService>();
 builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
