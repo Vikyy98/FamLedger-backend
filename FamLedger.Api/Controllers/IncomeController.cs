@@ -82,7 +82,12 @@ namespace FamLedger.Api.Controllers
                 return outcome.Status switch
                 {
                     AddIncomeStatus.Ok when outcome.Response != null =>
-                        CreatedAtAction(nameof(GetIncomeById), new { familyId = outcome.Response.FamilyId, incomeId = outcome.Response.Id }, outcome.Response),
+                        CreatedAtRoute("GetIncomeByIdRoute", new
+                        {
+                            familyId = outcome.Response.FamilyId,
+                            incomeId = outcome.Response.Id,
+                            type = (int)outcome.Response.Type
+                        }, outcome.Response),
                     AddIncomeStatus.Duplicate => Conflict("Duplicate income entry detected"),
                     AddIncomeStatus.InvalidRequest => BadRequest("Invalid income data"),
                     AddIncomeStatus.Forbidden => Forbid(),
@@ -97,7 +102,7 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-        [HttpGet("/api/families/{familyId}/incomes/{incomeId}/{type}")]
+        [HttpGet("/api/families/{familyId}/incomes/{incomeId}/{type}", Name = "GetIncomeByIdRoute")]
         public async Task<IActionResult> GetIncomeById(int familyId, int incomeId, int type)
         {
             try
