@@ -98,8 +98,7 @@ namespace FamLedger.Application.Services
                 var incomeItems = _mapper.Map<List<IncomeItemDto>>(incomeDetails);
                 incomeItems.AddRange(_mapper.Map<List<IncomeItemDto>>(recurringIncomeDetails));
                 incomeItems = incomeItems
-                    .OrderByDescending(i => i.DateReceived)
-                    .ThenByDescending(i => i.CreatedOn)
+                    .OrderByDescending(i => i.UpdatedOn)
                     .ToList();
 
                 System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-IN");
