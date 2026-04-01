@@ -51,4 +51,34 @@ namespace FamLedger.Application.DTOs.Response
         public static GetIncomeByIdResult Forbidden() =>
             new() { Status = GetIncomeByIdStatus.Forbidden };
     }
+
+    public enum UpdateIncomeStatus
+    {
+        Ok,
+        InvalidRequest,
+        NotFound,
+        Forbidden,
+        PersistenceFailed,
+    }
+
+    public sealed class UpdateIncomeResult
+    {
+        public UpdateIncomeStatus Status { get; init; }
+        public IncomeItemDto? Response { get; init; }
+
+        public static UpdateIncomeResult Success(IncomeItemDto dto) =>
+            new() { Status = UpdateIncomeStatus.Ok, Response = dto };
+
+        public static UpdateIncomeResult InvalidRequest() =>
+            new() { Status = UpdateIncomeStatus.InvalidRequest };
+
+        public static UpdateIncomeResult NotFound() =>
+            new() { Status = UpdateIncomeStatus.NotFound };
+
+        public static UpdateIncomeResult Forbidden() =>
+            new() { Status = UpdateIncomeStatus.Forbidden };
+
+        public static UpdateIncomeResult PersistenceFailed() =>
+            new() { Status = UpdateIncomeStatus.PersistenceFailed };
+    }
 }

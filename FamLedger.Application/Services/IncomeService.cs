@@ -235,6 +235,92 @@ namespace FamLedger.Application.Services
             }
         }
 
+        /// <param name="type">Route segment: record kind (1 = Recurring, 2 = OneTime). Type and frequency cannot be changed on update (Option A).</param>
+        public async Task<UpdateIncomeResult> UpdateIncomeAsync(int incomeId, int type, int familyId, IncomeRequestDto incomeRequest)
+        {
+            try
+            {
+                if (incomeRequest == null)
+                {
+                    return UpdateIncomeResult.InvalidRequest();
+                }
+
+                var currentUser = _userContext.GetUserContextFromClaims();
+                if (!HasFamilyAccess(familyId, currentUser) || !currentUser.UserId.HasValue)
+                {
+                    return UpdateIncomeResult.Forbidden();
+                }
+
+                var routeKind = type == (int)IncomeType.Recurring ? IncomeType.Recurring : IncomeType.OneTime;
+                if (incomeRequest.Type != routeKind)
+                {
+                    return UpdateIncomeResult.InvalidRequest();
+                }
+
+                if (type == (int)IncomeType.Recurring)
+                {
+                    var recurring = await _incomeRepository.GetRecurringIncomeByIdAsync(incomeId);
+                    if (recurring == null)
+                    {
+                        return UpdateIncomeResult.NotFound();
+                    }
+
+                    if (recurring.FamilyId != familyId)
+                    {
+                        return UpdateIncomeResult.Forbidden();
+                    }
+
+                    if (!IsAdmin(currentUser.Role) && recurring.UserId != currentUser.UserId.Value)
+                    {
+                        return UpdateIncomeResult.Forbidden();
+                    }
+
+                    recurring.Source = incomeRequest.Source;
+                    recurring.Amount = incomeRequest.Amount;
+                    if (incomeRequest.DateReceived.HasValue)
+                    {
+                        recurring.StartDate = incomeRequest.DateReceived.Value;
+                    }
+
+                    var updatedRecurring = await _incomeRepository.UpdateRecurringIncomeAsync(recurring);
+                    var recurringDto = _mapper.Map<IncomeItemDto>(updatedRecurring);
+                    return UpdateIncomeResult.Success(recurringDto);
+                }
+
+                var income = await _incomeRepository.GetIncomeByIdAsync(incomeId);
+                if (income == null)
+                {
+                    return UpdateIncomeResult.NotFound();
+                }
+
+                if (income.FamilyId != familyId)
+                {
+                    return UpdateIncomeResult.Forbidden();
+                }
+
+                if (!IsAdmin(currentUser.Role) && income.UserId != currentUser.UserId.Value)
+                {
+                    return UpdateIncomeResult.Forbidden();
+                }
+
+                income.Source = incomeRequest.Source;
+                income.Amount = incomeRequest.Amount;
+                if (incomeRequest.DateReceived.HasValue)
+                {
+                    income.IncomeDate = incomeRequest.DateReceived.Value;
+                }
+
+                var updatedIncome = await _incomeRepository.UpdateIncomeAsync(income);
+                var dto = _mapper.Map<IncomeItemDto>(updatedIncome);
+                return UpdateIncomeResult.Success(dto);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in UpdateIncomeAsync for Income ID: {IncomeId}", incomeId);
+                return UpdateIncomeResult.PersistenceFailed();
+            }
+        }
+
         private static bool IsRecurringIncomeActiveInMonth(
             RecurringIncome recurringIncome,
             DateOnly monthStart,

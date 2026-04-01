@@ -1,4 +1,4 @@
-﻿using FamLedger.Application.DTOs.Request;
+using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.Interfaces;
 using FamLedger.Domain.Entities;
 using FamLedger.Domain.Enums;
@@ -73,6 +73,22 @@ namespace FamLedger.Infrastructure.Services
             recurringIncome.UpdatedOn = DateTime.UtcNow;
             recurringIncome.Status = true;
             _context.RecurringIncome.Add(recurringIncome);
+            await _context.SaveChangesAsync();
+            return recurringIncome;
+        }
+
+        public async Task<Income> UpdateIncomeAsync(Income income)
+        {
+            income.UpdatedOn = DateTime.UtcNow;
+            _context.Income.Update(income);
+            await _context.SaveChangesAsync();
+            return income;
+        }
+
+        public async Task<RecurringIncome> UpdateRecurringIncomeAsync(RecurringIncome recurringIncome)
+        {
+            recurringIncome.UpdatedOn = DateTime.UtcNow;
+            _context.RecurringIncome.Update(recurringIncome);
             await _context.SaveChangesAsync();
             return recurringIncome;
         }

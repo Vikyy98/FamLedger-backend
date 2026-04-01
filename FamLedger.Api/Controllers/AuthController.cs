@@ -1,6 +1,7 @@
 using FamLedger.Application.Interfaces;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FamLedger.Api.Controllers
@@ -18,6 +19,7 @@ namespace FamLedger.Api.Controllers
             _userService = userService;
         }
 
+        [AllowAnonymous]
         [HttpPost("token")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest user)
         {
