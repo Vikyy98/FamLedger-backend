@@ -60,6 +60,7 @@ builder.Services.AddScoped<IIncomeService, IncomeService>();
 builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
 
 builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
+builder.Services.AddScoped<IFamilyInviteRepository, FamilyInviteRepository>();
 builder.Services.AddScoped<IFamilyService, FamilyService>();
 
 // Add services to the container.

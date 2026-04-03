@@ -19,5 +19,7 @@ namespace FamLedger.Application.Interfaces
         Task<Income?> GetIncomeByIdAsync(int incomeId);
         Task<RecurringIncome?> GetRecurringIncomeByIdAsync(int recurringIncomeId);
         Task<bool> IsDuplicateIncomeAsync(IncomeRequestDto income);
+        Task<bool> SoftDeleteIncomeAsync(int incomeId);
+        Task<bool> SoftDeleteRecurringIncomeAsync(int recurringIncomeId);
     }
 }

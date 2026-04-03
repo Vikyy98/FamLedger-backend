@@ -1,4 +1,4 @@
-﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore;
 using FamLedger.Domain.Entities;
 
 namespace FamLedger.Infrastructure.Data
@@ -16,6 +16,7 @@ namespace FamLedger.Infrastructure.Data
         public DbSet<Expense> Expense { get; set; } = null!;
         public DbSet<Asset> Asset { get; set; } = null!;
         public DbSet<Family> Family { get; set; } = null!;
+        public DbSet<FamilyInvite> FamilyInvites { get; set; } = null!;
 
 
 
@@ -23,6 +24,7 @@ namespace FamLedger.Infrastructure.Data
         {
             //Building Relations
             modelBuilder.Entity<Family>().HasMany(f => f.Users).WithOne(u => u.Family).HasForeignKey(u => u.FamilyId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Family>().HasMany(f => f.Invites).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<Family>().HasMany(f => f.Incomes).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.RecurringIncomes).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Expenses).WithOne(e => e.Family).HasForeignKey(e => e.FamilyId).OnDelete(DeleteBehavior.Restrict);
@@ -35,6 +37,8 @@ namespace FamLedger.Infrastructure.Data
             //Adding constraints
             modelBuilder.Entity<User>().HasIndex(e => e.Email).IsUnique();
             modelBuilder.Entity<Family>().HasIndex(entity => entity.FamilyCode).IsUnique();
+            modelBuilder.Entity<FamilyInvite>().ToTable("FamilyInvites");
+            modelBuilder.Entity<FamilyInvite>().HasIndex(i => i.CodeHash).IsUnique();
             modelBuilder.Entity<Loan>().Property(entity => entity.InterestRate).HasPrecision(18, 2);
 
             //Table naming convention

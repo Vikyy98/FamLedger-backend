@@ -20,6 +20,7 @@ namespace FamLedger.Api.Controllers
             _userService = userService;
         }
 
+        [AllowAnonymous]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] RegisterUserRequest request)
         {
@@ -30,8 +31,9 @@ namespace FamLedger.Api.Controllers
                 {
                     RegisterUserStatus.Ok when outcome.Response != null =>
                         Created($"/api/users/{outcome.Response.Id}", outcome.Response),
-                    RegisterUserStatus.InvalidRequest => BadRequest("User data is missing"),
+                    RegisterUserStatus.InvalidRequest => BadRequest("Choose create family or join with a valid invitation code, and fill all required fields."),
                     RegisterUserStatus.EmailAlreadyExists => Conflict("Email already exists"),
+                    RegisterUserStatus.InviteInvalid => BadRequest("Invalid or expired invitation code."),
                     RegisterUserStatus.Failed => BadRequest("Register User Failed"),
                     _ => BadRequest("Register User Failed"),
                 };

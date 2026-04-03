@@ -152,5 +152,41 @@ namespace FamLedger.Infrastructure.Services
                 return null;
             }
         }
+
+        public async Task<bool> SoftDeleteIncomeAsync(int incomeId)
+        {
+            try
+            {
+                var entity = await _context.Income.FirstOrDefaultAsync(i => i.Id == incomeId && i.Status);
+                if (entity == null) return false;
+                entity.Status = false;
+                entity.UpdatedOn = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error soft-deleting income {IncomeId}", incomeId);
+                return false;
+            }
+        }
+
+        public async Task<bool> SoftDeleteRecurringIncomeAsync(int recurringIncomeId)
+        {
+            try
+            {
+                var entity = await _context.RecurringIncome.FirstOrDefaultAsync(i => i.Id == recurringIncomeId && i.Status);
+                if (entity == null) return false;
+                entity.Status = false;
+                entity.UpdatedOn = DateTime.UtcNow;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error soft-deleting recurring income {RecurringIncomeId}", recurringIncomeId);
+                return false;
+            }
+        }
     }
 }

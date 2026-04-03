@@ -58,6 +58,60 @@ namespace FamLedger.Api.Controllers
             }
         }
 
+        /// <summary>Admin only. Replaces any previous code. Plain code is returned once; valid 24 hours.</summary>
+        [HttpPost("{familyId:int}/invitation")]
+        public async Task<ActionResult<FamilyInvitationResponse>> CreateFamilyInvitation(int familyId)
+        {
+            try
+            {
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid or missing user identity" });
+                }
+
+                var outcome = await _familyService.CreateFamilyInvitationAsync(familyId, userId);
+                return outcome.Status switch
+                {
+                    FamilyInvitationStatus.Ok when outcome.Response != null => Ok(outcome.Response),
+                    FamilyInvitationStatus.Forbidden => Forbid(),
+                    FamilyInvitationStatus.NotFound => NotFound(),
+                    FamilyInvitationStatus.Failed => StatusCode(500, new { message = "Could not create invitation" }),
+                    _ => StatusCode(500, new { message = "An internal error occurred" }),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while creating family invitation");
+                return StatusCode(500, new { message = "An internal error occurred" });
+            }
+        }
+
+        [HttpGet("{familyId:int}/members")]
+        public async Task<ActionResult<IReadOnlyList<FamilyMemberDto>>> GetFamilyMembers(int familyId)
+        {
+            try
+            {
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid or missing user identity" });
+                }
+
+                var outcome = await _familyService.GetFamilyMembersAsync(familyId, userId);
+                return outcome.Status switch
+                {
+                    FamilyMembersStatus.Ok when outcome.Members != null => Ok(outcome.Members),
+                    FamilyMembersStatus.NotFound => NotFound(),
+                    FamilyMembersStatus.Forbidden => Forbid(),
+                    _ => StatusCode(500),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while listing family members");
+                return StatusCode(500, new { message = "An internal error occurred" });
+            }
+        }
+
         [HttpGet("{id:int}")]
         public async Task<ActionResult<FamilyResponse>> GetFamilyById(int id)
         {

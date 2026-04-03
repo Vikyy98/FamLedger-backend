@@ -15,6 +15,7 @@ using FamLedger.Application.DTOs.Response;
 using Microsoft.Extensions.Logging;
 using FamLedger.Application.DTOs.Request;
 using Microsoft.AspNetCore.Identity;
+using FamLedger.Application.Utilities;
 
 namespace FamLedger.Application.Services
 {
@@ -23,12 +24,20 @@ namespace FamLedger.Application.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<UserService> _logger;
         private readonly IUserRepository _userRepository;
+        private readonly IFamilyRepository _familyRepository;
         private readonly IMapper _mapper;
-        public UserService(IConfiguration configuration, ILogger<UserService> logger, IUserRepository userRepository, IMapper mapper)
+
+        public UserService(
+            IConfiguration configuration,
+            ILogger<UserService> logger,
+            IUserRepository userRepository,
+            IFamilyRepository familyRepository,
+            IMapper mapper)
         {
             _configuration = configuration;
             _logger = logger;
             _userRepository = userRepository;
+            _familyRepository = familyRepository;
             _mapper = mapper;
         }
 
@@ -60,23 +69,79 @@ namespace FamLedger.Application.Services
                     return RegisterUserResult.InvalidRequest();
                 }
 
+                var mode = (userRequest.RegistrationMode ?? string.Empty).Trim();
+                var isCreate = string.Equals(mode, "createFamily", StringComparison.OrdinalIgnoreCase);
+                var isJoin = string.Equals(mode, "joinFamily", StringComparison.OrdinalIgnoreCase);
+                if (!isCreate && !isJoin)
+                {
+                    return RegisterUserResult.InvalidRequest();
+                }
+
+                if (isCreate && string.IsNullOrWhiteSpace(userRequest.FamilyName))
+                {
+                    return RegisterUserResult.InvalidRequest();
+                }
+
+                if (isJoin && string.IsNullOrWhiteSpace(userRequest.InvitationCode))
+                {
+                    return RegisterUserResult.InvalidRequest();
+                }
+
                 if (await _userRepository.GetUserByEmailAsync(userRequest.Email) != null)
                 {
                     return RegisterUserResult.EmailAlreadyExists();
                 }
 
                 var user = _mapper.Map<User>(userRequest);
-                var hashedPassowrd = new PasswordHasher<User>().HashPassword(user, userRequest.Password);
-                user.PasswordHash = hashedPassowrd;
+                var passwordHasher = new PasswordHasher<User>();
+                user.PasswordHash = passwordHasher.HashPassword(user, userRequest.Password);
 
-                bool registerUser = await _userRepository.RegisterUserAsync(user);
-                if (!registerUser)
+                if (isCreate)
                 {
-                    return RegisterUserResult.Failed();
+                    user.Role = "Admin";
+                    var lastFamily = await _familyRepository.GetLastFamilyAsync();
+                    var familyCode = FamilyCodeGenerator.Next(lastFamily?.FamilyCode);
+                    var family = new Family
+                    {
+                        FamilyName = userRequest.FamilyName!.Trim(),
+                        FamilyCode = familyCode,
+                        Status = true,
+                        InvitationCode = string.Empty,
+                        CreatedOn = DateTime.UtcNow,
+                        UpdatedOn = DateTime.UtcNow,
+                        CreatedBy = 0,
+                    };
+
+                    var (ok, createdUser, createdFamily) =
+                        await _userRepository.TryRegisterAdminAndCreateFamilyAsync(user, family);
+                    if (!ok || createdUser == null || createdFamily == null)
+                    {
+                        return RegisterUserResult.Failed();
+                    }
+
+                    var response = _mapper.Map<RegisterUserResponse>(createdUser);
+                    response.FamilyCode = createdFamily.FamilyCode;
+                    return RegisterUserResult.Success(response);
                 }
 
-                var userResponse = _mapper.Map<RegisterUserResponse>(user);
-                return RegisterUserResult.Success(userResponse);
+                {
+                    user.Role = "Member";
+                    var normalized = InviteCodeHasher.NormalizePlainCode(userRequest.InvitationCode);
+                    if (string.IsNullOrEmpty(normalized))
+                    {
+                        return RegisterUserResult.InviteInvalid();
+                    }
+
+                    var hash = InviteCodeHasher.Sha256Hex(normalized);
+                    var (success, joinedUser) = await _userRepository.TryRegisterMemberWithInviteAsync(user, hash);
+                    if (!success || joinedUser == null)
+                    {
+                        return RegisterUserResult.InviteInvalid();
+                    }
+
+                    var joinResponse = _mapper.Map<RegisterUserResponse>(joinedUser);
+                    return RegisterUserResult.Success(joinResponse);
+                }
             }
             catch (Exception ex)
             {
@@ -109,7 +174,7 @@ namespace FamLedger.Application.Services
                 }
 
                 var userDto = _mapper.Map<UserReponseDto>(user);
-                var userResponse = _mapper.Map<UserLoginResponse>(userDto);
+                var userResponse = _mapper.Map<UserLoginResponse>(user);
 
                 var jwtToken = CreateToken(userDto);
                 if (string.IsNullOrWhiteSpace(jwtToken))

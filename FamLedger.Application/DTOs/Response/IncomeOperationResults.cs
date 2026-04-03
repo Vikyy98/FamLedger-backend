@@ -81,4 +81,29 @@ namespace FamLedger.Application.DTOs.Response
         public static UpdateIncomeResult PersistenceFailed() =>
             new() { Status = UpdateIncomeStatus.PersistenceFailed };
     }
+
+    public enum DeleteIncomeStatus
+    {
+        Ok,
+        NotFound,
+        Forbidden,
+        PersistenceFailed,
+    }
+
+    public sealed class DeleteIncomeResult
+    {
+        public DeleteIncomeStatus Status { get; init; }
+
+        public static DeleteIncomeResult Ok() =>
+            new() { Status = DeleteIncomeStatus.Ok };
+
+        public static DeleteIncomeResult NotFound() =>
+            new() { Status = DeleteIncomeStatus.NotFound };
+
+        public static DeleteIncomeResult Forbidden() =>
+            new() { Status = DeleteIncomeStatus.Forbidden };
+
+        public static DeleteIncomeResult PersistenceFailed() =>
+            new() { Status = DeleteIncomeStatus.PersistenceFailed };
+    }
 }

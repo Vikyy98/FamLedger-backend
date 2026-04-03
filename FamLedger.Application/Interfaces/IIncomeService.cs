@@ -9,5 +9,6 @@ namespace FamLedger.Application.Interfaces
         Task<AddIncomeResult> AddIncomeAsync(IncomeRequestDto income);
         Task<GetIncomeByIdResult> GetIncomeByIdAsync(int incomeId, int type, int familyId);
         Task<UpdateIncomeResult> UpdateIncomeAsync(int incomeId, int type, int familyId, IncomeRequestDto incomeRequest);
+        Task<DeleteIncomeResult> DeleteIncomeAsync(int incomeId, int type, int familyId);
     }
 }

@@ -97,7 +97,7 @@ namespace FamLedger.Application.Services
 
                 var incomeItems = _mapper.Map<List<IncomeItemDto>>(incomeDetails);
                 incomeItems.AddRange(_mapper.Map<List<IncomeItemDto>>(recurringIncomeDetails));
-                incomeItems = incomeItems
+                incomeItems = incomeItems.Where(i => i.Status)
                     .OrderByDescending(i => i.UpdatedOn)
                     .ToList();
 
@@ -321,6 +321,63 @@ namespace FamLedger.Application.Services
             }
         }
 
+        public async Task<DeleteIncomeResult> DeleteIncomeAsync(int incomeId, int type, int familyId)
+        {
+            try
+            {
+                var currentUser = _userContext.GetUserContextFromClaims();
+                if (!HasFamilyAccess(familyId, currentUser) || !currentUser.UserId.HasValue)
+                {
+                    return DeleteIncomeResult.Forbidden();
+                }
+
+                if (type == (int)IncomeType.Recurring)
+                {
+                    var recurring = await _incomeRepository.GetRecurringIncomeByIdAsync(incomeId);
+                    if (recurring == null)
+                    {
+                        return DeleteIncomeResult.NotFound();
+                    }
+
+                    if (recurring.FamilyId != familyId)
+                    {
+                        return DeleteIncomeResult.Forbidden();
+                    }
+
+                    if (!IsAdmin(currentUser.Role) && recurring.UserId != currentUser.UserId.Value)
+                    {
+                        return DeleteIncomeResult.Forbidden();
+                    }
+
+                    var deletedRecurring = await _incomeRepository.SoftDeleteRecurringIncomeAsync(incomeId);
+                    return deletedRecurring ? DeleteIncomeResult.Ok() : DeleteIncomeResult.NotFound();
+                }
+
+                var income = await _incomeRepository.GetIncomeByIdAsync(incomeId);
+                if (income == null)
+                {
+                    return DeleteIncomeResult.NotFound();
+                }
+
+                if (income.FamilyId != familyId)
+                {
+                    return DeleteIncomeResult.Forbidden();
+                }
+
+                if (!IsAdmin(currentUser.Role) && income.UserId != currentUser.UserId.Value)
+                {
+                    return DeleteIncomeResult.Forbidden();
+                }
+
+                var deleted = await _incomeRepository.SoftDeleteIncomeAsync(incomeId);
+                return deleted ? DeleteIncomeResult.Ok() : DeleteIncomeResult.NotFound();
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in DeleteIncomeAsync for Income ID: {IncomeId}", incomeId);
+                return DeleteIncomeResult.PersistenceFailed();
+            }
+        }
         private static bool IsRecurringIncomeActiveInMonth(
             RecurringIncome recurringIncome,
             DateOnly monthStart,

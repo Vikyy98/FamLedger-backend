@@ -1,34 +1,29 @@
-using AutoMapper;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
-using FamLedger.Application.Options;
+using FamLedger.Application.Utilities;
 using FamLedger.Domain.Entities;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-
 namespace FamLedger.Application.Services
 {
     public class FamilyService : IFamilyService
     {
         private readonly IFamilyRepository _familyRepository;
         private readonly IUserRepository _userRepository;
+        private readonly IFamilyInviteRepository _familyInviteRepository;
         private readonly ILogger<FamilyService> _logger;
-        private readonly IMapper _mapper;
-        private readonly CommonOptions _options;
+
         public FamilyService(
             IFamilyRepository familyRepository,
             IUserRepository userRepository,
-            ILogger<FamilyService> logger,
-            IMapper mapper,
-            IOptions<CommonOptions> options
+            IFamilyInviteRepository familyInviteRepository,
+            ILogger<FamilyService> logger
             )
         {
             _familyRepository = familyRepository;
             _userRepository = userRepository;
+            _familyInviteRepository = familyInviteRepository;
             _logger = logger;
-            _mapper = mapper;
-            _options = options.Value;
         }
 
         public async Task<FamilyCreateResult> CreateFamilyAsync(int userId, string familyName)
@@ -50,32 +45,28 @@ namespace FamLedger.Application.Services
                 var lastFamily = await _familyRepository.GetLastFamilyAsync();
 
                 string newFamilyCode = GenerateFamilyCode(lastFamily?.FamilyCode);
-                string invitationCode = GenerateInvitationCode();
 
-                // 2. Create new Family entity
                 var family = new Family
                 {
                     FamilyName = familyName,
                     FamilyCode = newFamilyCode,
-                    InvitationCode = invitationCode,
+                    InvitationCode = string.Empty,
                     Status = true,
                     CreatedBy = userId,
                     CreatedOn = DateTime.UtcNow,
                     UpdatedOn = DateTime.UtcNow,
                 };
 
-                // 3. Save the family
                 await _familyRepository.AddFamilyAsync(family);
 
-                //Update user details
                 await _userRepository.UpdateFamilyDetailAsync(userId, family.Id);
 
                 return FamilyCreateResult.Success(new FamilyResponse
                 {
                     FamilyId = family.Id,
                     FamilyCode = newFamilyCode,
-                    InvitationCode = invitationCode,
-                    InvitationLink = $"{_options.RootUrl}/invite?code={invitationCode}"
+                    InvitationCode = null,
+                    InvitationLink = null,
                 });
             }
             catch (Exception ex)
@@ -110,13 +101,50 @@ namespace FamLedger.Application.Services
                 {
                     FamilyId = family.Id,
                     FamilyCode = family.FamilyCode,
-                    InvitationCode = family.InvitationCode,
-                    InvitationLink = $"{_options.RootUrl}/invite?code={family.InvitationCode}"
+                    InvitationCode = null,
+                    InvitationLink = null,
                 });
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in GetFamilyByIdAsync method for Family ID: {FamilyId}", familyId);
+                throw;
+            }
+        }
+
+        public async Task<FamilyMembersListResult> GetFamilyMembersAsync(int familyId, int requesterUserId)
+        {
+            try
+            {
+                var family = await _familyRepository.GetFamilyByIdAsync(familyId);
+                if (family == null)
+                {
+                    return FamilyMembersListResult.NotFound();
+                }
+
+                var requester = await _userRepository.GetUserByIdAsync(requesterUserId);
+                if (requester == null || requester.FamilyId != familyId)
+                {
+                    return FamilyMembersListResult.Forbidden();
+                }
+
+                var users = await _userRepository.GetUsersByFamilyIdAsync(familyId);
+                var members = users
+                    .Select(u => new FamilyMemberDto
+                    {
+                        Id = u.Id,
+                        FullName = u.FullName,
+                        Email = u.Email,
+                        Role = u.Role,
+                        CreatedOn = u.CreatedOn,
+                    })
+                    .ToList();
+
+                return FamilyMembersListResult.Ok(members);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "GetFamilyMembersAsync failed for family {FamilyId}", familyId);
                 throw;
             }
         }
@@ -131,9 +159,65 @@ namespace FamLedger.Application.Services
             return $"FAM{(number + 1).ToString("D3")}";
         }
 
-        private string GenerateInvitationCode()
+        public async Task<FamilyInvitationResult> CreateFamilyInvitationAsync(int familyId, int requesterUserId)
         {
-            return Guid.NewGuid().ToString("N")[..10].ToUpper(); // 10 char random
+            try
+            {
+                var requester = await _userRepository.GetUserByIdAsync(requesterUserId);
+                if (requester == null)
+                {
+                    return FamilyInvitationResult.Forbidden();
+                }
+
+                if (requester.FamilyId != familyId)
+                {
+                    return FamilyInvitationResult.Forbidden();
+                }
+
+                if (!IsFamilyAdmin(requester.Role))
+                {
+                    return FamilyInvitationResult.Forbidden();
+                }
+
+                var family = await _familyRepository.GetFamilyByIdAsync(familyId);
+                if (family == null)
+                {
+                    return FamilyInvitationResult.NotFound();
+                }
+
+                await _familyInviteRepository.DeleteForFamilyAsync(familyId);
+
+                var plain = InviteCodeHasher.GeneratePlainInviteCode();
+                var normalized = InviteCodeHasher.NormalizePlainCode(plain);
+                var hash = InviteCodeHasher.Sha256Hex(normalized);
+                var expiresAt = DateTime.UtcNow.AddHours(24);
+
+                var invite = new FamilyInvite
+                {
+                    FamilyId = familyId,
+                    CodeHash = hash,
+                    ExpiresAtUtc = expiresAt,
+                    CreatedOnUtc = DateTime.UtcNow,
+                    CreatedByUserId = requesterUserId,
+                };
+
+                await _familyInviteRepository.AddAsync(invite);
+
+                return FamilyInvitationResult.Success(new FamilyInvitationResponse
+                {
+                    InvitationCode = plain,
+                    ExpiresAtUtc = expiresAt,
+                });
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "CreateFamilyInvitationAsync failed for family {FamilyId}", familyId);
+                return FamilyInvitationResult.Failed();
+            }
         }
+
+        private static bool IsFamilyAdmin(string role) =>
+            string.Equals(role, "Admin", StringComparison.OrdinalIgnoreCase)
+            || string.Equals(role, "ADMIN", StringComparison.OrdinalIgnoreCase);
     }
 }

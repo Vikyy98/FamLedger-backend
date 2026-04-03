@@ -123,6 +123,27 @@ namespace FamLedger.Api.Controllers
             }
         }
 
+        [HttpDelete("/api/families/{familyId}/incomes/{incomeId}/{type}")]
+        public async Task<IActionResult> DeleteIncome(int familyId, int incomeId, int type)
+        {
+            try
+            {
+                var outcome = await _incomeService.DeleteIncomeAsync(incomeId, type, familyId);
+                return outcome.Status switch
+                {
+                    DeleteIncomeStatus.Ok => NoContent(),
+                    DeleteIncomeStatus.Forbidden => Forbid(),
+                    DeleteIncomeStatus.NotFound => NotFound(),
+                    DeleteIncomeStatus.PersistenceFailed => StatusCode(500, "Failed to delete income"),
+                    _ => StatusCode(500, "Failed to delete income"),
+                };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred in DeleteIncome method");
+                return StatusCode(500, "An error occurred while deleting income");
+            }
+        }
 
         //Get income details of family by year
 

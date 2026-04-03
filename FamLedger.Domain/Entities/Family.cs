@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -17,6 +17,7 @@ namespace FamLedger.Domain.Entities
         public DateTime UpdatedOn { get; set; }
         public int CreatedBy { get; set; }
         public ICollection<User>? Users { get; set; }
+        public ICollection<FamilyInvite>? Invites { get; set; }
         public ICollection<Income>? Incomes { get; set; }
         public ICollection<RecurringIncome>? RecurringIncomes { get; set; }
         public ICollection<Expense>? Expenses { get; set; }

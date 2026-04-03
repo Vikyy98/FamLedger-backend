@@ -5,6 +5,7 @@ namespace FamLedger.Application.DTOs.Response
         Ok,
         InvalidRequest,
         EmailAlreadyExists,
+        InviteInvalid,
         Failed,
     }
 
@@ -21,6 +22,9 @@ namespace FamLedger.Application.DTOs.Response
 
         public static RegisterUserResult EmailAlreadyExists() =>
             new() { Status = RegisterUserStatus.EmailAlreadyExists };
+
+        public static RegisterUserResult InviteInvalid() =>
+            new() { Status = RegisterUserStatus.InviteInvalid };
 
         public static RegisterUserResult Failed() =>
             new() { Status = RegisterUserStatus.Failed };
