@@ -1,10 +1,8 @@
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
-using FamLedger.Application.Utilities;
-using FamLedger.Domain.Enums;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 
 namespace FamLedger.Api.Controllers
 {
@@ -145,12 +143,5 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-        //Get income details of family by year
-
-        //Post income details
-
-        //Update income details of a memebr in family
-
-        //Delete income details of a memeber in famoly
     }
 }

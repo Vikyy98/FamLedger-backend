@@ -5,16 +5,14 @@ using FamLedger.Application.Interfaces;
 using FamLedger.Domain.Entities;
 using FamLedger.Domain.Enums;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+using System.Globalization;
 
 namespace FamLedger.Application.Services
 {
     public class IncomeService : IIncomeService
     {
+        private const int TrendMonths = 6;
+
         private readonly IIncomeRepository _incomeRepository;
         private readonly IUserContext _userContext;
         private readonly ILogger<IncomeService> _logger;
@@ -99,9 +97,12 @@ namespace FamLedger.Application.Services
                 incomeItems.AddRange(_mapper.Map<List<IncomeItemDto>>(recurringIncomeDetails));
                 incomeItems = incomeItems.Where(i => i.Status)
                     .OrderByDescending(i => i.UpdatedOn)
+                    .ThenByDescending(i => i.CreatedOn)
                     .ToList();
 
-                System.Globalization.CultureInfo culture = new System.Globalization.CultureInfo("en-IN");
+                var monthlyTrend = BuildMonthlyTrend(incomeDetails, recurringIncomeDetails, currentMonthStart);
+
+                var culture = new CultureInfo("en-IN");
                 var incomeReponse = new IncomeResponseDto
                 {
                     FamilyId = familyId,
@@ -109,7 +110,8 @@ namespace FamLedger.Application.Services
                     TotalRecurringIncome = totalCurrentMonthRecurringIncome.ToString("C", culture),
                     Incomes = incomeItems,
                     RecurringIncomeCount = recurringIncomeDetails.Count(i => i.Status && i.StartDate <= currentMonthEnd),
-                    PercentageDifference = percentageDifference.ToString("N2")
+                    PercentageDifference = percentageDifference.ToString("N2"),
+                    MonthlyTrend = monthlyTrend,
                 };
 
                 return incomeReponse;
@@ -145,6 +147,11 @@ namespace FamLedger.Application.Services
                 if (!CanCreateIncomeForUser(income.UserId, currentUser))
                 {
                     return AddIncomeResult.Forbidden();
+                }
+
+                if (string.IsNullOrWhiteSpace(income.Source) || income.Amount <= 0m || !income.DateReceived.HasValue)
+                {
+                    return AddIncomeResult.InvalidRequest();
                 }
 
                 if (income.Type == IncomeType.Recurring)
@@ -378,6 +385,36 @@ namespace FamLedger.Application.Services
                 return DeleteIncomeResult.PersistenceFailed();
             }
         }
+        private static List<IncomeMonthlyTrendDto> BuildMonthlyTrend(
+            List<Income> oneTimeIncomes,
+            List<RecurringIncome> recurringIncomes,
+            DateOnly currentMonthStart)
+        {
+            var trend = new List<IncomeMonthlyTrendDto>(TrendMonths);
+            // Oldest first (e.g. Dec, Jan, Feb, Mar, Apr, May)
+            for (int i = TrendMonths - 1; i >= 0; i--)
+            {
+                var monthStart = currentMonthStart.AddMonths(-i);
+                var monthEnd = monthStart.AddMonths(1).AddDays(-1);
+
+                var oneTimeTotal = oneTimeIncomes
+                    .Where(x => x.Status && x.IncomeDate >= monthStart && x.IncomeDate <= monthEnd)
+                    .Sum(x => x.Amount);
+
+                var recurringTotal = recurringIncomes
+                    .Where(x => IsRecurringIncomeActiveInMonth(x, monthStart, monthEnd))
+                    .Sum(x => x.Amount);
+
+                trend.Add(new IncomeMonthlyTrendDto
+                {
+                    Month = CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(monthStart.Month),
+                    Year = monthStart.Year,
+                    Total = oneTimeTotal + recurringTotal,
+                });
+            }
+            return trend;
+        }
+
         private static bool IsRecurringIncomeActiveInMonth(
             RecurringIncome recurringIncome,
             DateOnly monthStart,

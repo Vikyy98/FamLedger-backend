@@ -59,6 +59,9 @@ builder.Services.AddScoped<IUserContext, UserContextService>();
 builder.Services.AddScoped<IIncomeService, IncomeService>();
 builder.Services.AddScoped<IIncomeRepository, IncomeRepository>();
 
+builder.Services.AddScoped<IExpenseService, ExpenseService>();
+builder.Services.AddScoped<IExpenseRepository, ExpenseRepository>();
+
 builder.Services.AddScoped<IFamilyRepository, FamilyRepository>();
 builder.Services.AddScoped<IFamilyInviteRepository, FamilyInviteRepository>();
 builder.Services.AddScoped<IFamilyService, FamilyService>();

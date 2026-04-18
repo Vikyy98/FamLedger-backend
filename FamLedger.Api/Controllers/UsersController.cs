@@ -13,11 +13,16 @@ namespace FamLedger.Api.Controllers
     {
         private readonly ILogger<UsersController> _logger;
         private readonly IUserService _userService;
+        private readonly IUserContext _userContext;
 
-        public UsersController(ILogger<UsersController> logger, IUserService userService)
+        public UsersController(
+            ILogger<UsersController> logger,
+            IUserService userService,
+            IUserContext userContext)
         {
             _logger = logger;
             _userService = userService;
+            _userContext = userContext;
         }
 
         [AllowAnonymous]
@@ -46,11 +51,17 @@ namespace FamLedger.Api.Controllers
         }
 
         [HttpGet("{id:int}")]
-        public async Task<ActionResult<UserReponseDto>> GetUserById(int id)
+        public async Task<ActionResult<UserResponseDto>> GetUserById(int id)
         {
             try
             {
-                var user = await _userService.GetUserByIdAsync(id);
+                var caller = _userContext.GetUserContextFromClaims();
+                if (!caller.IsAuthenticated || !caller.UserId.HasValue)
+                {
+                    return Unauthorized();
+                }
+
+                var user = await _userService.GetUserByIdAsync(caller.UserId.Value, caller.FamilyId, id);
                 if (user == null) return NotFound();
                 return Ok(user);
             }

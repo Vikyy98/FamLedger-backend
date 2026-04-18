@@ -25,13 +25,39 @@ ASP.NET Core Web API for FamLedger. The backend provides authentication, family 
 
 ## Configuration
 
-Main config file: `FamLedger.Api/appsettings.json`
+Main config file: `FamLedger.Api/appsettings.json` (gitignored — never commit real secrets).
 
-Important keys:
+A non-secret template is provided at `FamLedger.Api/appsettings.Example.json`. First-time setup:
 
-- `ConnectionStrings:DefaultConnection`
-- `JWT:Key`, `JWT:Issuer`, `JWT:Audience`, `JWT:ExpireMinutes`
+```bash
+cp FamLedger.Api/appsettings.Example.json FamLedger.Api/appsettings.json
+```
+
+Then edit `appsettings.json` and fill in the real values. Important keys:
+
+- `ConnectionStrings:DefaultConnection` — local Postgres connection string
+- `JWT:Key` — generate with `openssl rand -base64 64 | tr -d '\n'` (must be ≥ 32 chars)
+- `JWT:Issuer`, `JWT:Audience`, `JWT:ExpireMinutes`
 - `Cors:AllowedOrigins`
+
+### Alternative: User Secrets (recommended for dev)
+
+Instead of putting secrets in `appsettings.json`, use .NET User Secrets (stored outside the repo):
+
+```bash
+cd FamLedger.Api
+dotnet user-secrets init
+dotnet user-secrets set "ConnectionStrings:DefaultConnection" "Host=localhost;Port=5432;Database=FamLedgerDb;Username=postgres;Password=YOUR_PASSWORD;"
+dotnet user-secrets set "JWT:Key" "YOUR_GENERATED_KEY"
+```
+
+### EF Core CLI (migrations)
+
+The design-time factory reads the same connection string. You can also override via environment variable:
+
+```bash
+export FAMLEDGER_DB_CONNECTION="Host=localhost;Port=5432;Database=FamLedgerDb;Username=postgres;Password=YOUR_PASSWORD;"
+```
 
 ## Run Locally
 

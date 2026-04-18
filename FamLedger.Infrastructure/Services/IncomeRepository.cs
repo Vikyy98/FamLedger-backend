@@ -110,13 +110,21 @@ namespace FamLedger.Infrastructure.Services
                 }
                 else
                 {
-                    // For one-time income, we can check for duplicates based on Source, Amount, DateReceived, and FamilyId
+                    // Without a DateReceived value we cannot reliably detect duplicates
+                    // for one-time income, so fall back to "not a duplicate" rather than
+                    // silently comparing against NULL (which always evaluates false).
+                    if (!income.DateReceived.HasValue)
+                    {
+                        return false;
+                    }
+
+                    var incomeDate = income.DateReceived.Value;
                     return await _context.Income.AnyAsync(i =>
                         i.FamilyId == income.FamilyId &&
                         i.UserId == income.UserId &&
                         i.Source == income.Source &&
                         i.Amount == income.Amount &&
-                        i.IncomeDate == income.DateReceived &&
+                        i.IncomeDate == incomeDate &&
                         i.Status == true);
                 }
             }

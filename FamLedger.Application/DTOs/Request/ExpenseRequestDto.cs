@@ -4,11 +4,11 @@ using FamLedger.Domain.Enums;
 namespace FamLedger.Application.DTOs.Request
 {
     /// <summary>
-    /// Payload for creating / updating an income.
+    /// Payload for creating / updating an expense.
     /// Note: UserId and FamilyId on this DTO are informational only; the
     /// service overwrites them with trusted JWT claim values on write.
     /// </summary>
-    public class IncomeRequestDto
+    public class ExpenseRequestDto
     {
         public int UserId { get; set; }
 
@@ -16,17 +16,16 @@ namespace FamLedger.Application.DTOs.Request
 
         [Required]
         [StringLength(200)]
-        public string? Source { get; set; }
+        public string? Description { get; set; }
 
-        public IncomeType Type { get; set; }
-
-        public string Frequency { get; set; } = "ONETIME";
+        [Required]
+        public ExpenseCategory Category { get; set; }
 
         [Required]
         [Range(0.01, double.MaxValue, ErrorMessage = "Amount must be greater than zero.")]
         public decimal Amount { get; set; }
 
         [Required]
-        public DateOnly? DateReceived { get; set; }
+        public DateOnly? ExpenseDate { get; set; }
     }
 }

@@ -42,18 +42,18 @@ namespace FamLedger.Application.Services
         }
 
 
-        public async Task<List<UserReponseDto>> GetUserAsync()
+        public async Task<List<UserResponseDto>> GetUserAsync()
         {
             try
             {
                 var users = await _userRepository.GetUsersAsync();
-                var userReponse = _mapper.Map<List<UserReponseDto>>(users);
-                return userReponse ?? new List<UserReponseDto>();
+                var userResponse = _mapper.Map<List<UserResponseDto>>(users);
+                return userResponse ?? new List<UserResponseDto>();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error occurred in GetUserAsync method");
-                return new List<UserReponseDto>();
+                return new List<UserResponseDto>();
             }
         }
 
@@ -173,7 +173,7 @@ namespace FamLedger.Application.Services
                     return LoginResult.InvalidPassword();
                 }
 
-                var userDto = _mapper.Map<UserReponseDto>(user);
+                var userDto = _mapper.Map<UserResponseDto>(user);
                 var userResponse = _mapper.Map<UserLoginResponse>(user);
 
                 var jwtToken = CreateToken(userDto);
@@ -192,7 +192,7 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public string CreateToken(UserReponseDto userDetails)
+        public string CreateToken(UserResponseDto userDetails)
         {
             try
             {
@@ -232,14 +232,25 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<UserReponseDto?> GetUserByIdAsync(int userId)
+        public async Task<UserResponseDto?> GetUserByIdAsync(int callerUserId, int? callerFamilyId, int targetUserId)
         {
             try
             {
-                var user = await _userRepository.GetUserByIdAsync(userId);
+                var user = await _userRepository.GetUserByIdAsync(targetUserId);
                 if (user == null) return null;
-                var dto = _mapper.Map<UserReponseDto>(user);
-                return dto;
+
+                // Authorization: allow only self-lookup, or lookup of a member of the caller's own family.
+                var isSelf = user.Id == callerUserId;
+                var isSameFamily = callerFamilyId.HasValue
+                    && user.FamilyId.HasValue
+                    && user.FamilyId.Value == callerFamilyId.Value;
+
+                if (!isSelf && !isSameFamily)
+                {
+                    return null;
+                }
+
+                return _mapper.Map<UserResponseDto>(user);
             }
             catch (Exception ex)
             {

@@ -1,8 +1,8 @@
-﻿using FamLedger.Domain.Enums;
+using FamLedger.Domain.Enums;
 
-namespace FamLedger.Domain.Entities
+namespace FamLedger.Application.DTOs.Response
 {
-    public class Expense
+    public class ExpenseItemDto
     {
         public int Id { get; set; }
         public int UserId { get; set; }
@@ -10,12 +10,9 @@ namespace FamLedger.Domain.Entities
         public string? Description { get; set; }
         public ExpenseCategory Category { get; set; }
         public decimal Amount { get; set; }
-        public DateOnly ExpenseDate { get; set; }
-        public bool Status { get; set; } = true;
+        public DateOnly? ExpenseDate { get; set; }
+        public bool Status { get; set; }
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
-
-        public User? User { get; set; }
-        public Family? Family { get; set; }
     }
 }

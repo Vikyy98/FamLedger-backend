@@ -5,10 +5,10 @@ namespace FamLedger.Application.Interfaces
 {
     public interface IUserService
     {
-        Task<List<UserReponseDto>> GetUserAsync();
+        Task<List<UserResponseDto>> GetUserAsync();
         Task<RegisterUserResult> RegisterUserAsync(RegisterUserRequest? userRequest);
         Task<LoginResult> LoginAsync(UserLoginRequest? request);
-        Task<UserReponseDto?> GetUserByIdAsync(int userId);
-        string CreateToken(UserReponseDto userDetails);
+        Task<UserResponseDto?> GetUserByIdAsync(int callerUserId, int? callerFamilyId, int targetUserId);
+        string CreateToken(UserResponseDto userDetails);
     }
 }
