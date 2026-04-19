@@ -112,6 +112,71 @@ namespace FamLedger.Api.Controllers
             }
         }
 
+        /// <summary>Admin-only. Soft-removes a member; their financial records stay in the ledger.</summary>
+        [HttpDelete("{familyId:int}/members/{memberUserId:int}")]
+        public async Task<IActionResult> RemoveFamilyMember(int familyId, int memberUserId)
+        {
+            try
+            {
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid or missing user identity" });
+                }
+
+                var outcome = await _familyService.RemoveFamilyMemberAsync(familyId, memberUserId, userId);
+                return MapMutation(outcome);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while removing family member");
+                return StatusCode(500, new { message = "An internal error occurred" });
+            }
+        }
+
+        /// <summary>Admin-only. Promotes a Member to Admin or demotes an Admin to Member.</summary>
+        [HttpPatch("{familyId:int}/members/{memberUserId:int}/role")]
+        public async Task<IActionResult> UpdateFamilyMemberRole(
+            int familyId,
+            int memberUserId,
+            [FromBody] UpdateMemberRoleRequest request)
+        {
+            try
+            {
+                if (request == null || string.IsNullOrWhiteSpace(request.Role))
+                {
+                    return BadRequest(new { message = "Role is required" });
+                }
+
+                if (!TryGetCurrentUserId(out var userId))
+                {
+                    return Unauthorized(new { message = "Invalid or missing user identity" });
+                }
+
+                var outcome = await _familyService.UpdateFamilyMemberRoleAsync(familyId, memberUserId, userId, request.Role);
+                return MapMutation(outcome);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error occurred while updating family member role");
+                return StatusCode(500, new { message = "An internal error occurred" });
+            }
+        }
+
+        private IActionResult MapMutation(FamilyMemberMutationResult outcome) => outcome.Status switch
+        {
+            FamilyMemberMutationStatus.Ok =>
+                outcome.Member != null ? Ok(outcome.Member) : NoContent(),
+            FamilyMemberMutationStatus.NotFound => NotFound(new { message = "Member not found" }),
+            FamilyMemberMutationStatus.Forbidden => Forbid(),
+            FamilyMemberMutationStatus.CannotTargetSelf =>
+                Conflict(new { message = "Admins cannot target themselves with this action" }),
+            FamilyMemberMutationStatus.LastAdmin =>
+                Conflict(new { message = "Cannot remove or demote the only remaining admin" }),
+            FamilyMemberMutationStatus.InvalidRequest =>
+                BadRequest(new { message = "Invalid role. Accepted values: Admin, Member" }),
+            _ => StatusCode(500, new { message = "An internal error occurred" }),
+        };
+
         [HttpGet("{id:int}")]
         public async Task<ActionResult<FamilyResponse>> GetFamilyById(int id)
         {
