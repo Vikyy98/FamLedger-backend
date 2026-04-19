@@ -91,4 +91,38 @@ namespace FamLedger.Application.DTOs.Response
         public static FamilyMembersListResult Forbidden() =>
             new() { Status = FamilyMembersStatus.Forbidden };
     }
+
+    public enum FamilyMemberMutationStatus
+    {
+        Ok,
+        NotFound,
+        Forbidden,
+        CannotTargetSelf,
+        LastAdmin,
+        InvalidRequest,
+    }
+
+    public sealed class FamilyMemberMutationResult
+    {
+        public FamilyMemberMutationStatus Status { get; init; }
+        public FamilyMemberDto? Member { get; init; }
+
+        public static FamilyMemberMutationResult Ok(FamilyMemberDto? member = null) =>
+            new() { Status = FamilyMemberMutationStatus.Ok, Member = member };
+
+        public static FamilyMemberMutationResult NotFound() =>
+            new() { Status = FamilyMemberMutationStatus.NotFound };
+
+        public static FamilyMemberMutationResult Forbidden() =>
+            new() { Status = FamilyMemberMutationStatus.Forbidden };
+
+        public static FamilyMemberMutationResult CannotTargetSelf() =>
+            new() { Status = FamilyMemberMutationStatus.CannotTargetSelf };
+
+        public static FamilyMemberMutationResult LastAdmin() =>
+            new() { Status = FamilyMemberMutationStatus.LastAdmin };
+
+        public static FamilyMemberMutationResult InvalidRequest() =>
+            new() { Status = FamilyMemberMutationStatus.InvalidRequest };
+    }
 }

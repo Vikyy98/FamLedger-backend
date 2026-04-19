@@ -82,6 +82,28 @@ public class UserRepository : IUserRepository
             }
         }
 
+    public async Task<bool> SoftDeleteUserAsync(int userId)
+    {
+        var user = await _context.User.FindAsync(userId);
+        if (user == null || !user.Status) return false;
+
+        user.Status = false;
+        user.UpdatedOn = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
+    public async Task<bool> UpdateUserRoleAsync(int userId, string role)
+    {
+        var user = await _context.User.FindAsync(userId);
+        if (user == null || !user.Status) return false;
+
+        user.Role = role;
+        user.UpdatedOn = DateTime.UtcNow;
+        await _context.SaveChangesAsync();
+        return true;
+    }
+
     public async Task UpdateFamilyDetailAsync(int userId, int familyId)
     {
         try

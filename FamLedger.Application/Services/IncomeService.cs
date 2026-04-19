@@ -144,11 +144,6 @@ namespace FamLedger.Application.Services
                     return AddIncomeResult.Forbidden();
                 }
 
-                if (!CanCreateIncomeForUser(income.UserId, currentUser))
-                {
-                    return AddIncomeResult.Forbidden();
-                }
-
                 if (string.IsNullOrWhiteSpace(income.Source) || income.Amount <= 0m || !income.DateReceived.HasValue)
                 {
                     return AddIncomeResult.InvalidRequest();
@@ -452,22 +447,6 @@ namespace FamLedger.Application.Services
                 && currentUser.FamilyId.HasValue
                 && requestedFamilyId > 0
                 && currentUser.FamilyId.Value == requestedFamilyId;
-        }
-
-        private static bool CanCreateIncomeForUser(int requestUserId, UserContextDto currentUser)
-        {
-            if (!currentUser.UserId.HasValue)
-            {
-                return false;
-            }
-
-            // Admin can add for any member in the same family.
-            if (IsAdmin(currentUser.Role))
-            {
-                return true;
-            }
-
-            return requestUserId == currentUser.UserId.Value;
         }
 
         private static bool IsAdmin(string role)
