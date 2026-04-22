@@ -13,7 +13,14 @@ using System.Text;
 var builder = WebApplication.CreateBuilder(args);
 
 var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-Console.WriteLine("DB CONN = " + (string.IsNullOrWhiteSpace(connectionString) ? "NULL" : "FOUND"));
+if (string.IsNullOrWhiteSpace(connectionString))
+{
+    // Fail fast during boot so Fly marks the machine unhealthy instead of
+    // letting the API come up and 500 on every request.
+    throw new InvalidOperationException(
+        "ConnectionStrings:DefaultConnection is not configured. " +
+        "Set it via appsettings, environment variable, or `fly secrets set`.");
+}
 
 builder.Services.AddDbContext<FamLedgerDbContext>(options => options.UseNpgsql(connectionString));
 
@@ -101,7 +108,6 @@ builder.Services.AddSwaggerGen(c =>
 var app = builder.Build();
 
 app.UseCors("FrontendCors");
-// Configure the HTTP request pipeline.
 
 if (app.Environment.IsDevelopment())
 {
@@ -109,10 +115,21 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.UseHttpsRedirection();
+// In production (Fly), the edge proxy terminates TLS and forwards plain HTTP
+// to the container. Forcing HTTPS redirect inside would bounce every request
+// and break health checks. Only redirect in local dev.
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Liveness probe for Fly / UptimeRobot. Public, no auth. Deliberately
+// does NOT check the database — a DB blip shouldn't kill the machine.
+app.MapGet("/health", () => Results.Ok(new { status = "ok" }))
+    .AllowAnonymous();
 
 app.MapControllers();
 

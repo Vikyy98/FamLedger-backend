@@ -1,0 +1,42 @@
+# Keep the build context small and avoid leaking dev-only files into the image.
+
+# Build outputs
+**/bin/
+**/obj/
+**/out/
+**/publish/
+
+# IDE / editor
+.vs/
+.vscode/
+.idea/
+.cursor/
+*.user
+*.suo
+
+# Git & CI
+.git/
+.github/
+.gitignore
+.gitattributes
+
+# OS noise
+.DS_Store
+Thumbs.db
+
+# Dev-only configuration — NEVER bake these into the image. Fly secrets provide
+# the production values at runtime via environment variables.
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/secrets.json
+**/*.pfx
+**/*.key
+
+# Node artifacts from the stray package-lock.json at the repo root
+node_modules/
+package-lock.json
+
+# Docs and scripts that don't belong in the image
+README.md
+DEPLOYMENT.md
+*.md

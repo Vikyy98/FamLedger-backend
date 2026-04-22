@@ -1,0 +1,27 @@
+# Render.com infrastructure-as-code — the dashboard reads this on each deploy.
+# Docs: https://render.com/docs/blueprint-spec
+
+services:
+  - type: web
+    name: famledger-api
+    runtime: docker
+    region: singapore         # closest to Supabase ap-south-1 on Render's free tier
+    plan: free                # 512MB RAM, sleeps after 15 min idle, 750 hrs/mo
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+
+    healthCheckPath: /health
+
+    # Secrets are set via the Render dashboard, NOT committed here.
+    # Keep `sync: false` so Render never overwrites them from this file.
+    envVars:
+      - key: ConnectionStrings__DefaultConnection
+        sync: false
+      - key: JWT__Key
+        sync: false
+      - key: JWT__Issuer
+        sync: false
+      - key: JWT__Audience
+        sync: false
+      - key: Cors__AllowedOrigins__0
+        sync: false
