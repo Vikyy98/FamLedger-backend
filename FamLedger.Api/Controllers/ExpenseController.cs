@@ -55,6 +55,7 @@ namespace FamLedger.Api.Controllers
                         {
                             familyId = outcome.Response.FamilyId,
                             expenseId = outcome.Response.Id,
+                            type = (int)outcome.Response.Type,
                         }, outcome.Response),
                     AddExpenseStatus.Duplicate => Conflict("Duplicate expense entry detected"),
                     AddExpenseStatus.InvalidRequest => BadRequest("Invalid expense data"),
@@ -70,12 +71,12 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-        [HttpGet("/api/families/{familyId}/expenses/{expenseId}", Name = "GetExpenseByIdRoute")]
-        public async Task<IActionResult> GetExpenseById(int familyId, int expenseId)
+        [HttpGet("/api/families/{familyId}/expenses/{expenseId}/{type}", Name = "GetExpenseByIdRoute")]
+        public async Task<IActionResult> GetExpenseById(int familyId, int expenseId, int type)
         {
             try
             {
-                var outcome = await _expenseService.GetExpenseByIdAsync(expenseId, familyId);
+                var outcome = await _expenseService.GetExpenseByIdAsync(expenseId, type, familyId);
                 return outcome.Status switch
                 {
                     GetExpenseByIdStatus.Ok when outcome.Response != null => Ok(outcome.Response),
@@ -91,8 +92,8 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-        [HttpPut("/api/families/{familyId}/expenses/{expenseId}")]
-        public async Task<IActionResult> UpdateExpense(int familyId, int expenseId, [FromBody] ExpenseRequestDto expenseRequest)
+        [HttpPut("/api/families/{familyId}/expenses/{expenseId}/{type}")]
+        public async Task<IActionResult> UpdateExpense(int familyId, int expenseId, int type, [FromBody] ExpenseRequestDto expenseRequest)
         {
             try
             {
@@ -101,11 +102,11 @@ namespace FamLedger.Api.Controllers
                     return BadRequest(ModelState);
                 }
 
-                var outcome = await _expenseService.UpdateExpenseAsync(expenseId, familyId, expenseRequest);
+                var outcome = await _expenseService.UpdateExpenseAsync(expenseId, type, familyId, expenseRequest);
                 return outcome.Status switch
                 {
                     UpdateExpenseStatus.Ok when outcome.Response != null => Ok(outcome.Response),
-                    UpdateExpenseStatus.InvalidRequest => BadRequest("Invalid expense data"),
+                    UpdateExpenseStatus.InvalidRequest => BadRequest("Invalid expense data. Type and frequency cannot be changed."),
                     UpdateExpenseStatus.Forbidden => Forbid(),
                     UpdateExpenseStatus.NotFound => NotFound(),
                     UpdateExpenseStatus.PersistenceFailed => StatusCode(500, "Failed to update expense"),
@@ -119,12 +120,12 @@ namespace FamLedger.Api.Controllers
             }
         }
 
-        [HttpDelete("/api/families/{familyId}/expenses/{expenseId}")]
-        public async Task<IActionResult> DeleteExpense(int familyId, int expenseId)
+        [HttpDelete("/api/families/{familyId}/expenses/{expenseId}/{type}")]
+        public async Task<IActionResult> DeleteExpense(int familyId, int expenseId, int type)
         {
             try
             {
-                var outcome = await _expenseService.DeleteExpenseAsync(expenseId, familyId);
+                var outcome = await _expenseService.DeleteExpenseAsync(expenseId, type, familyId);
                 return outcome.Status switch
                 {
                     DeleteExpenseStatus.Ok => NoContent(),

@@ -14,6 +14,7 @@ namespace FamLedger.Infrastructure.Data
         public DbSet<Income> Income { get; set; } = null!;
         public DbSet<RecurringIncome> RecurringIncome { get; set; } = null!;
         public DbSet<Expense> Expense { get; set; } = null!;
+        public DbSet<RecurringExpense> RecurringExpense { get; set; } = null!;
         public DbSet<Asset> Asset { get; set; } = null!;
         public DbSet<Family> Family { get; set; } = null!;
         public DbSet<FamilyInvite> FamilyInvites { get; set; } = null!;
@@ -28,10 +29,12 @@ namespace FamLedger.Infrastructure.Data
             modelBuilder.Entity<Family>().HasMany(f => f.Incomes).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.RecurringIncomes).WithOne(i => i.Family).HasForeignKey(i => i.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Expenses).WithOne(e => e.Family).HasForeignKey(e => e.FamilyId).OnDelete(DeleteBehavior.Restrict);
+            modelBuilder.Entity<Family>().HasMany(f => f.RecurringExpenses).WithOne(e => e.Family).HasForeignKey(e => e.FamilyId).OnDelete(DeleteBehavior.Restrict);
             modelBuilder.Entity<Family>().HasMany(f => f.Assets).WithOne(a => a.Family).HasForeignKey(a => a.FamilyId).OnDelete(DeleteBehavior.Restrict);
 
             modelBuilder.Entity<User>().HasMany(u => u.Incomes).WithOne(i => i.User).HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<User>().HasMany(u => u.RecurringIncomes).WithOne(i => i.User).HasForeignKey(i => i.UserId).OnDelete(DeleteBehavior.Cascade);
+            modelBuilder.Entity<User>().HasMany(u => u.RecurringExpenses).WithOne(e => e.User).HasForeignKey(e => e.UserId).OnDelete(DeleteBehavior.Cascade);
             modelBuilder.Entity<User>().HasMany(u => u.Assets).WithOne(a => a.User).HasForeignKey(a => a.OwnerUserId).OnDelete(DeleteBehavior.Cascade);
 
             //Adding constraints
@@ -49,6 +52,7 @@ namespace FamLedger.Infrastructure.Data
             modelBuilder.Entity<Loan>().ToTable("Loans");
             modelBuilder.Entity<Asset>().ToTable("Assets");
             modelBuilder.Entity<RecurringIncome>().ToTable("RecurringIncomes");
+            modelBuilder.Entity<RecurringExpense>().ToTable("RecurringExpenses");
 
         }
 

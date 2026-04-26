@@ -6,6 +6,8 @@ namespace FamLedger.Application.DTOs.Response
     {
         public int FamilyId { get; set; }
         public string? TotalExpense { get; set; }
+        public string? TotalRecurringExpense { get; set; }
+        public int RecurringExpenseCount { get; set; }
         public string? PercentageDifference { get; set; }
         public List<ExpenseItemDto> Expenses { get; set; } = new();
         public List<CategoryBreakdownDto> CategoryBreakdown { get; set; } = new();

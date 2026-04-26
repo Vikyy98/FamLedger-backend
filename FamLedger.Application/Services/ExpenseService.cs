@@ -42,7 +42,8 @@ namespace FamLedger.Application.Services
                 }
 
                 var expenses = await _expenseRepository.GetExpensesByFamilyAsync(familyId);
-                if (expenses.Count == 0)
+                var recurringExpenses = await _expenseRepository.GetRecurringExpensesByFamilyAsync(familyId);
+                if (expenses.Count == 0 && recurringExpenses.Count == 0)
                 {
                     return new ExpenseResponseDto { FamilyId = familyId };
                 }
@@ -55,14 +56,27 @@ namespace FamLedger.Application.Services
                 var lastMonthEnd = currentMonthStart.AddDays(-1);
 
                 var activeExpenses = expenses.Where(e => e.Status).ToList();
+                var activeRecurringExpenses = recurringExpenses.Where(e => e.Status).ToList();
 
-                var currentMonthTotal = activeExpenses
+                var currentMonthOneTime = activeExpenses
                     .Where(e => e.ExpenseDate >= currentMonthStart && e.ExpenseDate <= currentMonthEnd)
                     .Sum(e => e.Amount);
-
-                var lastMonthTotal = activeExpenses
+                var lastMonthOneTime = activeExpenses
                     .Where(e => e.ExpenseDate >= lastMonthStart && e.ExpenseDate <= lastMonthEnd)
                     .Sum(e => e.Amount);
+
+                var currentMonthRecurringList = activeRecurringExpenses
+                    .Where(e => IsRecurringExpenseActiveInMonth(e, currentMonthStart, currentMonthEnd))
+                    .ToList();
+                var lastMonthRecurringList = activeRecurringExpenses
+                    .Where(e => IsRecurringExpenseActiveInMonth(e, lastMonthStart, lastMonthEnd))
+                    .ToList();
+
+                var currentMonthRecurring = currentMonthRecurringList.Sum(e => e.Amount);
+                var lastMonthRecurring = lastMonthRecurringList.Sum(e => e.Amount);
+
+                var currentMonthTotal = currentMonthOneTime + currentMonthRecurring;
+                var lastMonthTotal = lastMonthOneTime + lastMonthRecurring;
 
                 decimal percentageDifference = 0m;
                 if (lastMonthTotal != 0m)
@@ -74,18 +88,23 @@ namespace FamLedger.Application.Services
                     percentageDifference = 100m;
                 }
 
-                var expenseItems = _mapper.Map<List<ExpenseItemDto>>(activeExpenses)
+                var expenseItems = _mapper.Map<List<ExpenseItemDto>>(activeExpenses);
+                expenseItems.AddRange(_mapper.Map<List<ExpenseItemDto>>(activeRecurringExpenses));
+                expenseItems = expenseItems
                     .OrderByDescending(e => e.UpdatedOn)
                     .ThenByDescending(e => e.CreatedOn)
                     .ToList();
 
-                var categoryBreakdown = BuildCategoryBreakdown(activeExpenses, currentMonthStart, currentMonthEnd);
-                var monthlyTrend = BuildMonthlyTrend(activeExpenses, currentMonthStart);
+                var categoryBreakdown = BuildCategoryBreakdown(
+                    activeExpenses, currentMonthRecurringList, currentMonthStart, currentMonthEnd);
+                var monthlyTrend = BuildMonthlyTrend(activeExpenses, activeRecurringExpenses, currentMonthStart);
 
                 return new ExpenseResponseDto
                 {
                     FamilyId = familyId,
                     TotalExpense = currentMonthTotal.ToString("C", culture),
+                    TotalRecurringExpense = currentMonthRecurring.ToString("C", culture),
+                    RecurringExpenseCount = activeRecurringExpenses.Count(e => e.StartDate <= currentMonthEnd),
                     PercentageDifference = percentageDifference.ToString("N2"),
                     Expenses = expenseItems,
                     CategoryBreakdown = categoryBreakdown,
@@ -111,7 +130,7 @@ namespace FamLedger.Application.Services
                     return AddExpenseResult.Forbidden();
                 }
 
-                // Trust JWT claims, never client-supplied identity values.
+                // Override client-supplied identity with trusted JWT claims.
                 expense.UserId = currentUser.UserId.Value;
                 expense.FamilyId = currentUser.FamilyId ?? 0;
 
@@ -125,6 +144,29 @@ namespace FamLedger.Application.Services
                     return AddExpenseResult.InvalidRequest();
                 }
 
+                if (expense.Type == ExpenseType.Recurring)
+                {
+                    // Only MONTHLY is supported; anything else would be invisible to monthly projection.
+                    var normalizedFrequency = (expense.Frequency ?? string.Empty).Trim().ToUpperInvariant();
+                    if (normalizedFrequency != "MONTHLY")
+                    {
+                        return AddExpenseResult.InvalidRequest();
+                    }
+                    expense.Frequency = normalizedFrequency;
+
+                    if (await _expenseRepository.IsDuplicateExpenseAsync(expense))
+                    {
+                        return AddExpenseResult.Duplicate();
+                    }
+
+                    var recurringEntity = _mapper.Map<RecurringExpense>(expense);
+                    var createdRecurring = await _expenseRepository.AddRecurringExpenseAsync(recurringEntity);
+                    if (createdRecurring == null) return AddExpenseResult.PersistenceFailed();
+
+                    var dto = _mapper.Map<ExpenseItemDto>(createdRecurring);
+                    return AddExpenseResult.Success(dto);
+                }
+
                 if (await _expenseRepository.IsDuplicateExpenseAsync(expense))
                 {
                     return AddExpenseResult.Duplicate();
@@ -134,8 +176,8 @@ namespace FamLedger.Application.Services
                 var created = await _expenseRepository.AddExpenseAsync(entity);
                 if (created == null) return AddExpenseResult.PersistenceFailed();
 
-                var dto = _mapper.Map<ExpenseItemDto>(created);
-                return AddExpenseResult.Success(dto);
+                var oneTimeDto = _mapper.Map<ExpenseItemDto>(created);
+                return AddExpenseResult.Success(oneTimeDto);
             }
             catch (Exception ex)
             {
@@ -144,7 +186,7 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<GetExpenseByIdResult> GetExpenseByIdAsync(int expenseId, int familyId)
+        public async Task<GetExpenseByIdResult> GetExpenseByIdAsync(int expenseId, int type, int familyId)
         {
             try
             {
@@ -154,15 +196,26 @@ namespace FamLedger.Application.Services
                     return GetExpenseByIdResult.Forbidden();
                 }
 
-                var expense = await _expenseRepository.GetExpenseByIdAsync(expenseId);
-                if (expense == null) return GetExpenseByIdResult.NotFound();
+                ExpenseItemDto? dto;
+                if (type == (int)ExpenseType.Recurring)
+                {
+                    var recurring = await _expenseRepository.GetRecurringExpenseByIdAsync(expenseId);
+                    if (recurring == null) return GetExpenseByIdResult.NotFound();
+                    dto = _mapper.Map<ExpenseItemDto>(recurring);
+                }
+                else
+                {
+                    var expense = await _expenseRepository.GetExpenseByIdAsync(expenseId);
+                    if (expense == null) return GetExpenseByIdResult.NotFound();
+                    dto = _mapper.Map<ExpenseItemDto>(expense);
+                }
 
-                if (expense.FamilyId != familyId)
+                if (dto.FamilyId != familyId)
                 {
                     return GetExpenseByIdResult.Forbidden();
                 }
 
-                return GetExpenseByIdResult.Success(_mapper.Map<ExpenseItemDto>(expense));
+                return GetExpenseByIdResult.Success(dto);
             }
             catch (Exception ex)
             {
@@ -171,7 +224,8 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<UpdateExpenseResult> UpdateExpenseAsync(int expenseId, int familyId, ExpenseRequestDto expenseRequest)
+        /// <param name="type">Route segment: record kind (1 = Recurring, 2 = OneTime). Type and frequency cannot be changed on update.</param>
+        public async Task<UpdateExpenseResult> UpdateExpenseAsync(int expenseId, int type, int familyId, ExpenseRequestDto expenseRequest)
         {
             try
             {
@@ -183,6 +237,45 @@ namespace FamLedger.Application.Services
                     return UpdateExpenseResult.Forbidden();
                 }
 
+                var routeKind = type == (int)ExpenseType.Recurring ? ExpenseType.Recurring : ExpenseType.OneTime;
+                if (expenseRequest.Type != routeKind)
+                {
+                    return UpdateExpenseResult.InvalidRequest();
+                }
+
+                if (string.IsNullOrWhiteSpace(expenseRequest.Description) || expenseRequest.Amount <= 0m || !expenseRequest.ExpenseDate.HasValue)
+                {
+                    return UpdateExpenseResult.InvalidRequest();
+                }
+
+                if (type == (int)ExpenseType.Recurring)
+                {
+                    var recurring = await _expenseRepository.GetRecurringExpenseByIdAsync(expenseId);
+                    if (recurring == null)
+                    {
+                        return UpdateExpenseResult.NotFound();
+                    }
+
+                    if (recurring.FamilyId != familyId)
+                    {
+                        return UpdateExpenseResult.Forbidden();
+                    }
+
+                    if (!IsAdmin(currentUser.Role) && recurring.UserId != currentUser.UserId.Value)
+                    {
+                        return UpdateExpenseResult.Forbidden();
+                    }
+
+                    recurring.Description = expenseRequest.Description;
+                    recurring.Category = expenseRequest.Category;
+                    recurring.Amount = expenseRequest.Amount;
+                    recurring.StartDate = expenseRequest.ExpenseDate.Value;
+                    // Frequency intentionally not updatable here (route kind is locked).
+
+                    var updatedRecurring = await _expenseRepository.UpdateRecurringExpenseAsync(recurring);
+                    return UpdateExpenseResult.Success(_mapper.Map<ExpenseItemDto>(updatedRecurring));
+                }
+
                 var expense = await _expenseRepository.GetExpenseByIdAsync(expenseId);
                 if (expense == null) return UpdateExpenseResult.NotFound();
 
@@ -191,15 +284,9 @@ namespace FamLedger.Application.Services
                     return UpdateExpenseResult.Forbidden();
                 }
 
-                // Only admins OR the user who created the expense may edit it.
                 if (!IsAdmin(currentUser.Role) && expense.UserId != currentUser.UserId.Value)
                 {
                     return UpdateExpenseResult.Forbidden();
-                }
-
-                if (string.IsNullOrWhiteSpace(expenseRequest.Description) || expenseRequest.Amount <= 0m || !expenseRequest.ExpenseDate.HasValue)
-                {
-                    return UpdateExpenseResult.InvalidRequest();
                 }
 
                 expense.Description = expenseRequest.Description;
@@ -217,7 +304,7 @@ namespace FamLedger.Application.Services
             }
         }
 
-        public async Task<DeleteExpenseResult> DeleteExpenseAsync(int expenseId, int familyId)
+        public async Task<DeleteExpenseResult> DeleteExpenseAsync(int expenseId, int type, int familyId)
         {
             try
             {
@@ -225,6 +312,25 @@ namespace FamLedger.Application.Services
                 if (!HasFamilyAccess(familyId, currentUser) || !currentUser.UserId.HasValue)
                 {
                     return DeleteExpenseResult.Forbidden();
+                }
+
+                if (type == (int)ExpenseType.Recurring)
+                {
+                    var recurring = await _expenseRepository.GetRecurringExpenseByIdAsync(expenseId);
+                    if (recurring == null) return DeleteExpenseResult.NotFound();
+
+                    if (recurring.FamilyId != familyId)
+                    {
+                        return DeleteExpenseResult.Forbidden();
+                    }
+
+                    if (!IsAdmin(currentUser.Role) && recurring.UserId != currentUser.UserId.Value)
+                    {
+                        return DeleteExpenseResult.Forbidden();
+                    }
+
+                    var deletedRecurring = await _expenseRepository.SoftDeleteRecurringExpenseAsync(expenseId);
+                    return deletedRecurring ? DeleteExpenseResult.Ok() : DeleteExpenseResult.NotFound();
                 }
 
                 var expense = await _expenseRepository.GetExpenseByIdAsync(expenseId);
@@ -264,17 +370,22 @@ namespace FamLedger.Application.Services
 
         private static List<CategoryBreakdownDto> BuildCategoryBreakdown(
             List<Expense> activeExpenses,
+            List<RecurringExpense> currentMonthRecurringList,
             DateOnly monthStart,
             DateOnly monthEnd)
         {
-            var currentMonthOnly = activeExpenses
+            var oneTimeForMonth = activeExpenses
                 .Where(e => e.ExpenseDate >= monthStart && e.ExpenseDate <= monthEnd)
-                .ToList();
+                .Select(e => new { e.Category, e.Amount });
 
-            var monthTotal = currentMonthOnly.Sum(e => e.Amount);
+            var recurringForMonth = currentMonthRecurringList
+                .Select(e => new { e.Category, e.Amount });
+
+            var combined = oneTimeForMonth.Concat(recurringForMonth).ToList();
+            var monthTotal = combined.Sum(e => e.Amount);
             if (monthTotal <= 0m) return new List<CategoryBreakdownDto>();
 
-            return currentMonthOnly
+            return combined
                 .GroupBy(e => e.Category)
                 .Select(g =>
                 {
@@ -293,26 +404,55 @@ namespace FamLedger.Application.Services
 
         private static List<ExpenseMonthlyTrendDto> BuildMonthlyTrend(
             List<Expense> activeExpenses,
+            List<RecurringExpense> activeRecurringExpenses,
             DateOnly currentMonthStart)
         {
             var trend = new List<ExpenseMonthlyTrendDto>(TrendMonths);
-            // Oldest first (e.g. Dec, Jan, Feb, Mar, Apr, May)
             for (int i = TrendMonths - 1; i >= 0; i--)
             {
                 var monthStart = currentMonthStart.AddMonths(-i);
                 var monthEnd = monthStart.AddMonths(1).AddDays(-1);
-                var total = activeExpenses
+
+                var oneTimeTotal = activeExpenses
                     .Where(e => e.ExpenseDate >= monthStart && e.ExpenseDate <= monthEnd)
+                    .Sum(e => e.Amount);
+
+                var recurringTotal = activeRecurringExpenses
+                    .Where(e => IsRecurringExpenseActiveInMonth(e, monthStart, monthEnd))
                     .Sum(e => e.Amount);
 
                 trend.Add(new ExpenseMonthlyTrendDto
                 {
                     Month = CultureInfo.InvariantCulture.DateTimeFormat.GetAbbreviatedMonthName(monthStart.Month),
                     Year = monthStart.Year,
-                    Total = total,
+                    Total = oneTimeTotal + recurringTotal,
                 });
             }
             return trend;
+        }
+
+        private static bool IsRecurringExpenseActiveInMonth(
+            RecurringExpense recurringExpense,
+            DateOnly monthStart,
+            DateOnly monthEnd)
+        {
+            if (!recurringExpense.Status || recurringExpense.StartDate > monthEnd)
+            {
+                return false;
+            }
+
+            int monthsDifference =
+                (monthStart.Year - recurringExpense.StartDate.Year) * 12 +
+                (monthStart.Month - recurringExpense.StartDate.Month);
+
+            if (monthsDifference < 0)
+            {
+                return false;
+            }
+
+            // Only MONTHLY is supported; ignore stale rows with other values.
+            var frequency = (recurringExpense.Frequency ?? "MONTHLY").Trim().ToUpperInvariant();
+            return frequency == "MONTHLY";
         }
 
         private static bool HasFamilyAccess(int requestedFamilyId, UserContextDto currentUser)

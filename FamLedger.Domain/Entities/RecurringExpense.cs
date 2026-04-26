@@ -1,8 +1,8 @@
 using FamLedger.Domain.Enums;
 
-namespace FamLedger.Application.DTOs.Response
+namespace FamLedger.Domain.Entities
 {
-    public class ExpenseItemDto
+    public class RecurringExpense
     {
         public int Id { get; set; }
         public int UserId { get; set; }
@@ -10,12 +10,13 @@ namespace FamLedger.Application.DTOs.Response
         public string? Description { get; set; }
         public ExpenseCategory Category { get; set; }
         public decimal Amount { get; set; }
-        public DateOnly? ExpenseDate { get; set; }
         public bool Status { get; set; }
+        public DateOnly StartDate { get; set; }
+        public string? Frequency { get; set; }
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
 
-        public ExpenseType Type { get; set; } = ExpenseType.OneTime;
-        public string Frequency { get; set; } = "ONETIME";
+        public User? User { get; set; }
+        public Family? Family { get; set; }
     }
 }

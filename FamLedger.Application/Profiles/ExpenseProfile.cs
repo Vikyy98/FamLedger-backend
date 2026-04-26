@@ -2,6 +2,7 @@ using AutoMapper;
 using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using FamLedger.Domain.Entities;
+using FamLedger.Domain.Enums;
 
 namespace FamLedger.Application.Profiles
 {
@@ -9,9 +10,7 @@ namespace FamLedger.Application.Profiles
     {
         public ExpenseProfile()
         {
-            // ExpenseRequestDto -> Expense
-            // CreatedOn/UpdatedOn are stamped by the repository on write, so we
-            // explicitly ignore them here to avoid overwriting with defaults.
+            // CreatedOn/UpdatedOn are stamped in the repository, ignore them on map.
             CreateMap<ExpenseRequestDto, Expense>()
                 .ForMember(dest => dest.CreatedOn, opt => opt.Ignore())
                 .ForMember(dest => dest.UpdatedOn, opt => opt.Ignore())
@@ -19,8 +18,21 @@ namespace FamLedger.Application.Profiles
                 .ForMember(dest => dest.ExpenseDate, opt => opt.MapFrom(src =>
                     src.ExpenseDate.HasValue ? src.ExpenseDate.Value : DateOnly.FromDateTime(DateTime.UtcNow)));
 
-            // Expense -> ExpenseItemDto (convention-based; all property names match)
-            CreateMap<Expense, ExpenseItemDto>();
+            CreateMap<ExpenseRequestDto, RecurringExpense>()
+                .ForMember(dest => dest.CreatedOn, opt => opt.Ignore())
+                .ForMember(dest => dest.UpdatedOn, opt => opt.Ignore())
+                .ForMember(dest => dest.Status, opt => opt.MapFrom(_ => true))
+                .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src =>
+                    src.ExpenseDate.HasValue ? src.ExpenseDate.Value : DateOnly.FromDateTime(DateTime.UtcNow)));
+
+            CreateMap<Expense, ExpenseItemDto>()
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(_ => ExpenseType.OneTime))
+                .ForMember(dest => dest.Frequency, opt => opt.MapFrom(_ => "ONETIME"));
+
+            // RecurringExpense.StartDate surfaces as ExpenseDate so the UI can use one field.
+            CreateMap<RecurringExpense, ExpenseItemDto>()
+                .ForMember(dest => dest.ExpenseDate, opt => opt.MapFrom(src => src.StartDate))
+                .ForMember(dest => dest.Type, opt => opt.MapFrom(_ => ExpenseType.Recurring));
         }
     }
 }

@@ -2,10 +2,10 @@
 
 Current target stack: **Render.com** (backend) · **Supabase** (Postgres) · **Vercel** (frontend, separate repo)
 
-> Why Render and not Fly? Fly flagged the account as "high risk" during signup
-> (common for Indian accounts). Render has no such gatekeeper and a truly free
-> tier — tradeoff is a 30–50 sec cold start after 15 min of idle. Fine for MVP,
-> revisit once Fly unblocks or on paid plan.
+> Trade-off to know about: Render's free tier sleeps after 15 min of idle, so the
+> first request after a quiet period takes 30–50 sec (cold start). Fine for an MVP;
+> if that becomes painful, either move to Render's $7/mo plan or add an UptimeRobot
+> 10-min ping to keep the instance warm.
 
 ---
 
@@ -118,29 +118,3 @@ With the free tier:
 **Net cost: $0/mo** until you outgrow it.
 
 First thing to upgrade when you have real users: Render Starter at $7/mo to kill the cold-start problem.
-
----
-
-## Appendix: Fly.io (original plan, revisit later)
-
-If you later unlock your Fly account (https://fly.io/high-risk-unlock), the original Fly artifacts are still in the repo (`fly.toml`). To switch:
-
-```bash
-brew install flyctl
-fly auth login
-fly launch --no-deploy --copy-config --name famledger-api --region bom
-fly secrets set \
-  ConnectionStrings__DefaultConnection='...' \
-  JWT__Key='...' \
-  JWT__Issuer='famledger-api' \
-  JWT__Audience='famledger-web' \
-  Cors__AllowedOrigins__0='https://famledger.vercel.app'
-fly deploy
-```
-
-Advantages of Fly over Render for your case:
-- ~2 sec cold start vs 30–50 sec
-- Can run multiple regions
-- More transparent pricing
-
-Downside: ~$0.50–2/mo (covered by Fly's $5 monthly credit, but card required).

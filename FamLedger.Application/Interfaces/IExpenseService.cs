@@ -7,9 +7,9 @@ namespace FamLedger.Application.Interfaces
     {
         Task<ExpenseResponseDto> GetExpenseDetailsAsync(int familyId);
         Task<AddExpenseResult> AddExpenseAsync(ExpenseRequestDto expense);
-        Task<GetExpenseByIdResult> GetExpenseByIdAsync(int expenseId, int familyId);
-        Task<UpdateExpenseResult> UpdateExpenseAsync(int expenseId, int familyId, ExpenseRequestDto expenseRequest);
-        Task<DeleteExpenseResult> DeleteExpenseAsync(int expenseId, int familyId);
+        Task<GetExpenseByIdResult> GetExpenseByIdAsync(int expenseId, int type, int familyId);
+        Task<UpdateExpenseResult> UpdateExpenseAsync(int expenseId, int type, int familyId, ExpenseRequestDto expenseRequest);
+        Task<DeleteExpenseResult> DeleteExpenseAsync(int expenseId, int type, int familyId);
         List<ExpenseCategoryDto> GetCategories();
     }
 }

@@ -27,5 +27,9 @@ namespace FamLedger.Application.DTOs.Request
 
         [Required]
         public DateOnly? ExpenseDate { get; set; }
+
+        public ExpenseType Type { get; set; } = ExpenseType.OneTime;
+
+        public string Frequency { get; set; } = "ONETIME";
     }
 }

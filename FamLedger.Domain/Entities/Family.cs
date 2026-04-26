@@ -21,6 +21,7 @@ namespace FamLedger.Domain.Entities
         public ICollection<Income>? Incomes { get; set; }
         public ICollection<RecurringIncome>? RecurringIncomes { get; set; }
         public ICollection<Expense>? Expenses { get; set; }
+        public ICollection<RecurringExpense>? RecurringExpenses { get; set; }
         public ICollection<Asset>? Assets { get; set; }
 
     }
