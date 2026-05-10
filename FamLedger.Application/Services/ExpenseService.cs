@@ -329,6 +329,13 @@ namespace FamLedger.Application.Services
                         return DeleteExpenseResult.Forbidden();
                     }
 
+                    // Recurring expenses auto-created from a debt EMI must be deleted via the
+                    // Debt endpoints, otherwise the debt would silently lose its EMI link.
+                    if (recurring.SourceDebtId.HasValue)
+                    {
+                        return DeleteExpenseResult.Forbidden();
+                    }
+
                     var deletedRecurring = await _expenseRepository.SoftDeleteRecurringExpenseAsync(expenseId);
                     return deletedRecurring ? DeleteExpenseResult.Ok() : DeleteExpenseResult.NotFound();
                 }

@@ -3,6 +3,7 @@ using System;
 using FamLedger.Infrastructure.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
@@ -11,9 +12,11 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace FamLedger.Infrastructure.Migrations
 {
     [DbContext(typeof(FamLedgerDbContext))]
-    partial class FamLedgerDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260426175746_AddLiabilities")]
+    partial class AddLiabilities
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -69,82 +72,6 @@ namespace FamLedger.Infrastructure.Migrations
                     b.HasIndex("OwnerUserId");
 
                     b.ToTable("Assets", (string)null);
-                });
-
-            modelBuilder.Entity("FamLedger.Domain.Entities.Debt", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Category")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("DebtName")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("EmiDayOfMonth")
-                        .HasColumnType("integer");
-
-                    b.Property<DateOnly?>("EndDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("FamilyId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("InterestRate")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("LenderName")
-                        .HasColumnType("text");
-
-                    b.Property<int?>("LinkedRecurringExpenseId")
-                        .HasColumnType("integer");
-
-                    b.Property<decimal>("MonthlyEmi")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<string>("Notes")
-                        .HasColumnType("text");
-
-                    b.Property<decimal>("PrincipalAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<decimal>("RemainingAmount")
-                        .HasPrecision(18, 2)
-                        .HasColumnType("numeric(18,2)");
-
-                    b.Property<DateOnly>("StartDate")
-                        .HasColumnType("date");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("integer");
-
-                    b.Property<DateTime>("UpdatedOn")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("FamilyId");
-
-                    b.HasIndex("LinkedRecurringExpenseId")
-                        .IsUnique();
-
-                    b.HasIndex("UserId");
-
-                    b.ToTable("Debts", (string)null);
                 });
 
             modelBuilder.Entity("FamLedger.Domain.Entities.Expense", b =>
@@ -306,6 +233,82 @@ namespace FamLedger.Infrastructure.Migrations
                     b.ToTable("Incomes", (string)null);
                 });
 
+            modelBuilder.Entity("FamLedger.Domain.Entities.Loan", b =>
+                {
+                    b.Property<int>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("integer");
+
+                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
+
+                    b.Property<int>("Category")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("EmiDayOfMonth")
+                        .HasColumnType("integer");
+
+                    b.Property<DateOnly?>("EndDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("FamilyId")
+                        .HasColumnType("integer");
+
+                    b.Property<decimal>("InterestRate")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("LenderName")
+                        .HasColumnType("text");
+
+                    b.Property<int?>("LinkedRecurringExpenseId")
+                        .HasColumnType("integer");
+
+                    b.Property<string>("LoanName")
+                        .IsRequired()
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("MonthlyEmi")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<string>("Notes")
+                        .HasColumnType("text");
+
+                    b.Property<decimal>("PrincipalAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<decimal>("RemainingAmount")
+                        .HasPrecision(18, 2)
+                        .HasColumnType("numeric(18,2)");
+
+                    b.Property<DateOnly>("StartDate")
+                        .HasColumnType("date");
+
+                    b.Property<int>("Status")
+                        .HasColumnType("integer");
+
+                    b.Property<DateTime>("UpdatedOn")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<int>("UserId")
+                        .HasColumnType("integer");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FamilyId");
+
+                    b.HasIndex("LinkedRecurringExpenseId")
+                        .IsUnique();
+
+                    b.HasIndex("UserId");
+
+                    b.ToTable("Loans", (string)null);
+                });
+
             modelBuilder.Entity("FamLedger.Domain.Entities.RecurringExpense", b =>
                 {
                     b.Property<int>("Id")
@@ -332,7 +335,7 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Property<string>("Frequency")
                         .HasColumnType("text");
 
-                    b.Property<int?>("SourceDebtId")
+                    b.Property<int?>("SourceLoanId")
                         .HasColumnType("integer");
 
                     b.Property<DateOnly>("StartDate")
@@ -351,7 +354,7 @@ namespace FamLedger.Infrastructure.Migrations
 
                     b.HasIndex("FamilyId");
 
-                    b.HasIndex("SourceDebtId");
+                    b.HasIndex("SourceLoanId");
 
                     b.HasIndex("UserId");
 
@@ -467,32 +470,6 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("FamLedger.Domain.Entities.Debt", b =>
-                {
-                    b.HasOne("FamLedger.Domain.Entities.Family", "Family")
-                        .WithMany("Debts")
-                        .HasForeignKey("FamilyId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.HasOne("FamLedger.Domain.Entities.RecurringExpense", "LinkedRecurringExpense")
-                        .WithOne()
-                        .HasForeignKey("FamLedger.Domain.Entities.Debt", "LinkedRecurringExpenseId")
-                        .OnDelete(DeleteBehavior.SetNull);
-
-                    b.HasOne("FamLedger.Domain.Entities.User", "User")
-                        .WithMany("Debts")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.Navigation("Family");
-
-                    b.Navigation("LinkedRecurringExpense");
-
-                    b.Navigation("User");
-                });
-
             modelBuilder.Entity("FamLedger.Domain.Entities.Expense", b =>
                 {
                     b.HasOne("FamLedger.Domain.Entities.Family", "Family")
@@ -542,6 +519,32 @@ namespace FamLedger.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("FamLedger.Domain.Entities.Loan", b =>
+                {
+                    b.HasOne("FamLedger.Domain.Entities.Family", "Family")
+                        .WithMany("Loans")
+                        .HasForeignKey("FamilyId")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.HasOne("FamLedger.Domain.Entities.RecurringExpense", "LinkedRecurringExpense")
+                        .WithOne()
+                        .HasForeignKey("FamLedger.Domain.Entities.Loan", "LinkedRecurringExpenseId")
+                        .OnDelete(DeleteBehavior.SetNull);
+
+                    b.HasOne("FamLedger.Domain.Entities.User", "User")
+                        .WithMany("Loans")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("Family");
+
+                    b.Navigation("LinkedRecurringExpense");
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("FamLedger.Domain.Entities.RecurringExpense", b =>
                 {
                     b.HasOne("FamLedger.Domain.Entities.Family", "Family")
@@ -550,9 +553,9 @@ namespace FamLedger.Infrastructure.Migrations
                         .OnDelete(DeleteBehavior.Restrict)
                         .IsRequired();
 
-                    b.HasOne("FamLedger.Domain.Entities.Debt", "SourceDebt")
+                    b.HasOne("FamLedger.Domain.Entities.Loan", "SourceLoan")
                         .WithMany()
-                        .HasForeignKey("SourceDebtId")
+                        .HasForeignKey("SourceLoanId")
                         .OnDelete(DeleteBehavior.SetNull);
 
                     b.HasOne("FamLedger.Domain.Entities.User", "User")
@@ -563,7 +566,7 @@ namespace FamLedger.Infrastructure.Migrations
 
                     b.Navigation("Family");
 
-                    b.Navigation("SourceDebt");
+                    b.Navigation("SourceLoan");
 
                     b.Navigation("User");
                 });
@@ -601,13 +604,13 @@ namespace FamLedger.Infrastructure.Migrations
                 {
                     b.Navigation("Assets");
 
-                    b.Navigation("Debts");
-
                     b.Navigation("Expenses");
 
                     b.Navigation("Incomes");
 
                     b.Navigation("Invites");
+
+                    b.Navigation("Loans");
 
                     b.Navigation("RecurringExpenses");
 
@@ -620,11 +623,11 @@ namespace FamLedger.Infrastructure.Migrations
                 {
                     b.Navigation("Assets");
 
-                    b.Navigation("Debts");
-
                     b.Navigation("Expenses");
 
                     b.Navigation("Incomes");
+
+                    b.Navigation("Loans");
 
                     b.Navigation("RecurringExpenses");
 

@@ -16,7 +16,12 @@ namespace FamLedger.Domain.Entities
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
 
+        // When set, this recurring expense was auto-created from a Debt EMI and
+        // is owned by that Debt. Direct deletion via the expense API is blocked.
+        public int? SourceDebtId { get; set; }
+
         public User? User { get; set; }
         public Family? Family { get; set; }
+        public Debt? SourceDebt { get; set; }
     }
 }
