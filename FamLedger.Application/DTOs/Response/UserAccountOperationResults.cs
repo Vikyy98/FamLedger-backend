@@ -34,8 +34,8 @@ namespace FamLedger.Application.DTOs.Response
     {
         Ok,
         MissingInput,
-        UserNotFound,
-        InvalidPassword,
+        // Covers unknown email, wrong password, and disabled account — avoids enumeration.
+        InvalidCredentials,
         TokenFailed,
     }
 
@@ -50,11 +50,8 @@ namespace FamLedger.Application.DTOs.Response
         public static LoginResult MissingInput() =>
             new() { Status = LoginStatus.MissingInput };
 
-        public static LoginResult UserNotFound() =>
-            new() { Status = LoginStatus.UserNotFound };
-
-        public static LoginResult InvalidPassword() =>
-            new() { Status = LoginStatus.InvalidPassword };
+        public static LoginResult InvalidCredentials() =>
+            new() { Status = LoginStatus.InvalidCredentials };
 
         public static LoginResult TokenFailed() =>
             new() { Status = LoginStatus.TokenFailed };

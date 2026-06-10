@@ -3,6 +3,7 @@ using FamLedger.Application.DTOs.Response;
 using FamLedger.Application.Interfaces;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FamLedger.Api.Controllers
 {
@@ -26,6 +27,7 @@ namespace FamLedger.Api.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         [HttpPost]
         public async Task<IActionResult> CreateUser([FromBody] RegisterUserRequest request)
         {

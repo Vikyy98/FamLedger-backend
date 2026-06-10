@@ -3,6 +3,7 @@ using FamLedger.Application.DTOs.Request;
 using FamLedger.Application.DTOs.Response;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.RateLimiting;
 
 namespace FamLedger.Api.Controllers
 {
@@ -20,6 +21,7 @@ namespace FamLedger.Api.Controllers
         }
 
         [AllowAnonymous]
+        [EnableRateLimiting("auth")]
         [HttpPost("token")]
         public async Task<IActionResult> Login([FromBody] UserLoginRequest user)
         {
@@ -29,9 +31,8 @@ namespace FamLedger.Api.Controllers
                 return outcome.Status switch
                 {
                     LoginStatus.Ok when outcome.User != null => Ok(new { user = outcome.User }),
-                    LoginStatus.MissingInput => BadRequest("User data is null"),
-                    LoginStatus.UserNotFound => NotFound("User not found"),
-                    LoginStatus.InvalidPassword => Unauthorized("Invalid password"),
+                    LoginStatus.MissingInput => BadRequest("Email and password are required"),
+                    LoginStatus.InvalidCredentials => Unauthorized("Invalid email or password"),
                     LoginStatus.TokenFailed => BadRequest("Failed to login, Try again later"),
                     _ => BadRequest("Failed to login, Try again later"),
                 };

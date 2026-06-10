@@ -164,13 +164,19 @@ namespace FamLedger.Application.Services
                 var user = await _userRepository.GetUserByEmailAsync(request.Email);
                 if (user == null)
                 {
-                    return LoginResult.UserNotFound();
+                    return LoginResult.InvalidCredentials();
                 }
 
                 var verify = new PasswordHasher<User>().VerifyHashedPassword(user, user.PasswordHash, request.Password);
                 if (verify == PasswordVerificationResult.Failed)
                 {
-                    return LoginResult.InvalidPassword();
+                    return LoginResult.InvalidCredentials();
+                }
+
+                // Checked after password verification so a disabled account is indistinguishable from a wrong password.
+                if (!user.Status)
+                {
+                    return LoginResult.InvalidCredentials();
                 }
 
                 var userDto = _mapper.Map<UserResponseDto>(user);
