@@ -17,6 +17,9 @@ public interface IUserRepository
     /// <summary>Updates the role for the given user. Returns true if a row was updated.</summary>
     Task<bool> UpdateUserRoleAsync(int userId, string role);
 
+    /// <summary>Records the user's last successful login time. Failures are swallowed (metrics only).</summary>
+    Task UpdateLastLoginAsync(int userId);
+
     /// <summary>Creates admin user and family in one transaction.</summary>
     Task<(bool Success, User? User, Family? Family)> TryRegisterAdminAndCreateFamilyAsync(User user, Family family);
 

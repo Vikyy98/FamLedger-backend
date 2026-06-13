@@ -104,6 +104,23 @@ public class UserRepository : IUserRepository
         return true;
     }
 
+    public async Task UpdateLastLoginAsync(int userId)
+    {
+        // Best-effort metrics write — never let a failure here break the login flow.
+        try
+        {
+            var user = await _context.User.FindAsync(userId);
+            if (user == null) return;
+
+            user.LastLoginAt = DateTime.UtcNow;
+            await _context.SaveChangesAsync();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to update LastLoginAt for user {UserId}", userId);
+        }
+    }
+
     public async Task UpdateFamilyDetailAsync(int userId, int familyId)
     {
         try

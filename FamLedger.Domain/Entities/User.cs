@@ -13,6 +13,7 @@ namespace FamLedger.Domain.Entities
         public bool Status { get; set; } = true;
         public DateTime CreatedOn { get; set; }
         public DateTime UpdatedOn { get; set; }
+        public DateTime? LastLoginAt { get; set; }
 
         public Family Family { get; set; }
         public ICollection<Income> Incomes { get; set; }

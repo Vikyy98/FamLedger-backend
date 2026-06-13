@@ -189,6 +189,7 @@ namespace FamLedger.Application.Services
                 }
 
                 userResponse.token = jwtToken;
+                await _userRepository.UpdateLastLoginAsync(user.Id);
                 return LoginResult.Success(userResponse);
             }
             catch (Exception ex)
